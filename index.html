@@ -39,6 +39,7 @@ body.theme-glass .sidebar,
 body.theme-glass .tc,
 body.theme-glass .mb,
 body.theme-glass .kpi,
+body.theme-glass .cc,
 body.theme-glass .ph{
   background:rgba(12,16,36,.50) !important;
   backdrop-filter:blur(18px);
@@ -47,7 +48,23 @@ body.theme-glass .ph{
   box-shadow:0 10px 34px rgba(0,0,0,.35), inset 0 0 18px rgba(255,255,255,.06) !important;
 }
 body.theme-glass .ph{border-radius:14px;padding:16px 20px;}
+body.theme-glass .cc h3{color:#fff !important;text-shadow:0 1px 3px rgba(0,0,0,.35);opacity:1;}
 body.theme-glass .content{background:transparent;}
+/* ApexCharts di dalam kartu kaca: grid/label default gelap jadi tak kelihatan
+   di atas kaca gelap, jadi dipaksa terang supaya "wallpaper" chart tetap mulus. */
+body.theme-glass .apexcharts-canvas,
+body.theme-glass .apexcharts-canvas svg{ background:transparent !important; }
+body.theme-glass .apexcharts-text,
+body.theme-glass .apexcharts-legend-text,
+body.theme-glass .apexcharts-xaxis-label,
+body.theme-glass .apexcharts-yaxis-label,
+body.theme-glass .apexcharts-datalabel,
+body.theme-glass .apexcharts-datalabel-label,
+body.theme-glass .apexcharts-datalabel-value{ fill:#fff !important; color:#fff !important; }
+body.theme-glass .apexcharts-gridline{ stroke:rgba(255,255,255,.15) !important; }
+body.theme-glass .apexcharts-legend-series .apexcharts-legend-text{ color:#fff !important; }
+body.theme-glass .apexcharts-tooltip{ background:#1c2340 !important; color:#fff !important; border:1px solid rgba(255,255,255,.25) !important; }
+body.theme-glass .apexcharts-tooltip-title{ background:rgba(255,255,255,.08) !important; color:#fff !important; }
 
 /* Teks default putih dengan bayangan tipis supaya tetap terbaca di atas gradient terang */
 body.theme-glass h1,body.theme-glass h2,body.theme-glass h3,body.theme-glass h4,
@@ -60,10 +77,15 @@ body.theme-glass .ni{color:rgba(255,255,255,.82);text-shadow:none;}
 body.theme-glass .ni:hover,body.theme-glass .ni.active{background:rgba(255,255,255,.18) !important;color:#fff;}
 body.theme-glass .nav-sep{color:rgba(255,255,255,.5);text-shadow:none;}
 
-body.theme-glass .fc,body.theme-glass .si,body.theme-glass select,body.theme-glass input,body.theme-glass textarea{
+body.theme-glass .fc,body.theme-glass .si,body.theme-glass select,body.theme-glass input,body.theme-glass textarea,
+body.theme-glass .sel-sm{
   background:rgba(255,255,255,.10) !important;color:#fff !important;border:1px solid rgba(255,255,255,.32) !important;
 }
 body.theme-glass .fc::placeholder,body.theme-glass .si::placeholder{color:rgba(255,255,255,.55);}
+/* Popup opsi <select> dirender native oleh browser (tidak ikut backdrop-filter),
+   jadi dikasih warna solid gelap supaya teks putih di atas tetap terbaca & tombolnya kelihatan. */
+body.theme-glass select, body.theme-glass .sel-sm{ color-scheme: dark; }
+body.theme-glass select option{ background:#1c2340 !important; color:#fff !important; }
 
 body.theme-glass table{background:transparent;}
 body.theme-glass th{background:rgba(255,255,255,.10) !important;text-shadow:none;}
@@ -175,6 +197,14 @@ body.theme-glass ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.35);}
 .btn-dn{background:var(--er);color:#fff;}.btn-dn:hover{background:#c56352;}
 .btn-sm{padding:5px 10px;font-size:.74rem;}
 .tw{width:100%;overflow-x:auto;}
+.pgn{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;flex-wrap:wrap;font-size:.82rem;color:var(--tm);}
+.pgn .pgn-btns{display:flex;align-items:center;gap:6px;}
+.pgn button{padding:6px 12px;border:1px solid var(--bd);background:#fff;color:var(--tx);border-radius:8px;cursor:pointer;font-size:.82rem;font-family:'Inter',sans-serif;}
+.pgn button:disabled{opacity:.4;cursor:not-allowed;}
+.pgn button.active{background:var(--pr);color:#fff;border-color:var(--pr);}
+body.theme-glass .pgn button{background:rgba(255,255,255,.10) !important;border:1px solid rgba(255,255,255,.32) !important;color:#fff !important;}
+body.theme-glass .pgn button.active{background:rgba(255,255,255,.9) !important;color:#3a2e6b !important;}
+body.theme-glass .pgn{color:rgba(255,255,255,.75) !important;}
 table{width:100%;border-collapse:collapse;min-width:640px;}
 thead th{background:var(--pr-soft);color:var(--pr2);padding:11px 12px;text-align:left;font-size:.78rem;font-weight:600;white-space:nowrap;}
 thead th:first-child{border-radius:8px 0 0 8px;}
@@ -260,6 +290,11 @@ tbody td{padding:11px 12px;font-size:.82rem;color:var(--tx);white-space:nowrap;}
     <button class="lb" onclick="doLogin()"><i class="fas fa-right-to-bracket"></i> Masuk</button>
     <div class="lc-foot" id="loginFoot">Mode demo: admin / admin123</div>
     <div class="lc-foot"><a onclick="openLoginBackendSettings()">Pengaturan Backend</a></div>
+    <div class="lc-foot">
+      <label style="cursor:pointer;"><a>Mode Offline (Import Data .json)</a>
+        <input type="file" accept="application/json" style="display:none;" onchange="importOfflineFileAtLogin(this)">
+      </label>
+    </div>
   </div>
 </div>
 
@@ -287,7 +322,9 @@ tbody td{padding:11px 12px;font-size:.82rem;color:var(--tx);white-space:nowrap;}
       <div class="nav-sep">Lainnya</div>
       <div class="ni" data-p="upload"><i class="fas fa-file-arrow-up"></i><span>Master Upload</span></div>
       <div class="ni" data-p="reports"><i class="fas fa-chart-column"></i><span>Report</span></div>
+      <div class="ni" data-p="sync"><i class="fas fa-arrows-rotate"></i><span>Sinkronisasi Offline</span></div>
       <div class="ni" data-p="settings"><i class="fas fa-gear"></i><span>Settings</span></div>
+
       <div class="ni" id="logoutBtn"><i class="fas fa-right-from-bracket"></i><span>Keluar</span></div>
     </div>
   </div>
@@ -385,9 +422,18 @@ const DEMO_KARYAWAN = [
   {_row:3,'NIK':'PSAM-0002','Nama':'Rina Wulandari','Jenis Kelamin':'P','Jabatan':'Admin Kebun','Departemen / Afdeling':'Kebun','Status Karyawan':'PKWTT','Golongan':'Staff','Tanggal Masuk':'2022-05-10','No Kontrak':'-','Pendidikan Terakhir':'D3','No HP':'081200000002','Status Aktif':'Aktif','Catatan':''}
 ];
 const DEMO_ABSENSI = [
-  {_row:2,'ID':'ABS-0001','Tanggal':'2026-06-01','NIK':'PSAM-0001','Nama Karyawan':'San Haji','Departemen / Afdeling':'Afd 1','Status':'M - Mangkir/Alpha','Keterangan':''},
-  {_row:3,'ID':'ABS-0002','Tanggal':'2026-06-02','NIK':'PSAM-0001','Nama Karyawan':'San Haji','Departemen / Afdeling':'Afd 1','Status':'M - Mangkir/Alpha','Keterangan':''},
-  {_row:4,'ID':'ABS-0003','Tanggal':'2026-06-03','NIK':'PSAM-0001','Nama Karyawan':'San Haji','Departemen / Afdeling':'Afd 1','Status':'M - Mangkir/Alpha','Keterangan':''}
+  {_row:2,'NO':1,'NIK':'PSAM-0001','Nama Karyawan':'San Haji','Status':'PKWTT','Jabatan':'Pemanen',
+   'HKE':25,'HB':4,'HBK':0,'KB':0,'S1':0,'S2':0,'S3':0,'S4':0,'P2':0,'CT':0,'CH':0,'DL':0,'TP':0,
+   'TOTAL HKNE':0,'HMK':0,'HM':0,'M':3,'TK':0,'P1':0,'PGH':0,'LGH':0,'TOTAL':25,
+   '26':'M','27':'M','28':'M','29':'H','30':'H','1':'H','2':'H','3':'H','4':'H','5':'H','6':'H','7':'H','8':'H','9':'H','10':'H',
+   '11':'H','12':'H','13':'H','14':'H','15':'H','16':'H','17':'H','18':'H','19':'H','20':'H','21':'H','22':'H','23':'H','24':'H','25':'H',
+   'ID':'ABS-0001'},
+  {_row:3,'NO':2,'NIK':'PSAM-0002','Nama Karyawan':'Rina Wulandari','Status':'PKWTT','Jabatan':'Admin Kebun',
+   'HKE':25,'HB':4,'HBK':0,'KB':0,'S1':1,'S2':0,'S3':0,'S4':0,'P2':0,'CT':2,'CH':0,'DL':0,'TP':0,
+   'TOTAL HKNE':0,'HMK':0,'HM':0,'M':0,'TK':0,'P1':0,'PGH':0,'LGH':0,'TOTAL':25,
+   '26':'H','27':'H','28':'S1','29':'H','30':'H','1':'H','2':'H','3':'H','4':'H','5':'H','6':'H','7':'H','8':'H','9':'H','10':'H',
+   '11':'CT','12':'CT','13':'H','14':'H','15':'H','16':'H','17':'H','18':'H','19':'H','20':'H','21':'H','22':'H','23':'H','24':'H','25':'H',
+   'ID':'ABS-0002'}
 ];
 const DEMO_CUTI = [
   {_row:2,'No Pengajuan':'CT-0001','Tanggal Pengajuan':'2026-07-01','NIK':'PSAM-0002','Nama':'Rina Wulandari','Jabatan':'Admin Kebun','Status Karyawan':'PKWTT','Tanggal Masuk Kerja':'2022-05-10','Masa Kerja (Tahun)':4,'Jenis Cuti':'Cuti Tahunan','Sisa Cuti Tahun Sebelumnya':15,'Cuti Yang Telah Diambil Tahun Ini':6,'Tanggal Cuti Dari':'2026-07-15','Tanggal Cuti Sampai':'2026-07-18','Jumlah Hari Diminta':4,'Sisa Cuti Setelah Ini':5,'Disetujui Oleh':'Muhammad Idris','Status Pengajuan':'Disetujui','Catatan':''}
@@ -396,18 +442,19 @@ const DEMO_MPP = [
   {_row:2,'Departemen / Afdeling':'Afd 1','Jabatan':'Pemanen','Kebutuhan (Standar)':20,'Existing (Saat Ini)':16,'Kekurangan / Kelebihan':4,'Bulan Rencana Pemenuhan':'Agustus','Jumlah Rencana Pemenuhan':4,'Catatan':'Rekrut PKWT baru'}
 ];
 const DEMO_FURNITURE = [
-  {_row:2,'No':1,'Nama Barang':'Kursi Kantor','Kode Barang':'KRS','Jumlah':1,'Satuan':'UNIT','Merk':'Chitose','Lokasi Aktiva':'Kantor HR','Bulan Perolehan':'01','Tahun Perolehan':2023,'Penanggung Jawab':'Staff HR','Jabatan':'Staff HR','Kondisi Baik':'V','Kondisi Rusak':'','Kondisi Perbaikan':'','Harga':750000,'Register Asset':'PSAM/23 01/A/D1 06 01/0001'}
+  {_row:2,'No':1,'Nama_Barang':'Kursi Kantor','kode_Barang':'KRS','Jumlah':1,'Sat':'UNIT','Registrasi_Kodefikasi':'PSAM/23 01/A/D1 06 01/0001','Merk':'Chitose','Spesifikasi':'Kursi putar','Serial_Number':'','Lokasi_Aktiva':'Kantor HR','Kode_Lokasi_Aktiva':'D1 06 01','Bulan_Perolehan':'01','Tahun_Perolehan_':2023,'Penanggung_Jawab':'Staff HR','Jabatan':'Staff HR','Baik':'V','Rusak':'','Perbaikan':'','Kodefikasi_Aseet':'A','Harga':750000,'Keterangan':'','Register_Asset':'PSAM/23 01/A/D1 06 01/0001'}
 ];
 const DEMO_BANGUNAN = [
-  {_row:2,'No':1,'Nama Barang':'Mess Longhouse','Kode Barang':'BGN','Jumlah':1,'Satuan':'UNIT','Lokasi Aktiva':'Kebun Afd 1','Bulan Perolehan':'12','Tahun Perolehan':2016,'Penanggung Jawab':'Aji Pangestu','Jabatan':'Asisten PGA','Kondisi Baik':'V','Harga':350000000,'Register Asset':'PSAM/16 12/B/D1 06 14/0001'}
+  {_row:2,'KEBUN':'PSAM','AFD':'Afd 1','KODE_BANGUNAN':'BGN-0001','JENIS':'Mess Longhouse','SAT':'UNIT','HARGA_BANGUNAN':350000000,'DIBANGUN_OLEH':'Kontraktor Lokal','BLOK':'B14','AFD_2':'Afd 1','LUAS_(M2)':120,'QTY':1,'UTILITY':'Listrik & Air','TAHUN_PEROLEHAN':2016,'KETERANGAN':''}
 ];
 const DEMO_UNIT = [
-  {_row:2,'No':1,'Nama Barang':'AC Split 1 PK','Kode Barang':'ACS','Jumlah':1,'Satuan':'UNIT','Merk':'Samsung','Lokasi Aktiva':'Mess Longhouse - Kmr.4','Bulan Perolehan':'12','Tahun Perolehan':2016,'Penanggung Jawab':'Aji Pangestu','Jabatan':'Asisten PGA','Kondisi Baik':'V','Harga':3288288,'Register Asset':'PSAM/16 12/A/D1 06 14/0002'}
+  {_row:2,'JENIS':'AC Split','NAMA_UNIT':'AC Split 1 PK','KODE_UNIT':'ACS-0002','NO.POLISI':'','MERK/TYPE':'Samsung 1 PK','NO_CHASIS':'','NO_MESIN':'','PEROLEHAN':'12/2016','BBM':'-','KONDISI_UNIT':'Baik','ALOKASI':'Mess Longhouse - Kmr.4','USER':'Aji Pangestu'}
 ];
 
 // ══════════════════════════════════════════════════
 //  API LAYER
 // ══════════════════════════════════════════════════
+const NON_QUEUEABLE_ACTIONS = ['login','logout']; // aksi ini TIDAK dimasukkan ke antrian offline
 async function api(action, params={}){
   if(!USE_BACKEND) return null;
   const url = new URL(BACKEND_URL);
@@ -431,9 +478,190 @@ async function api(action, params={}){
     return data;
   } catch(err){
     console.error('[API error]', action, err.message);
+    const queueable = isWrite && !NON_QUEUEABLE_ACTIONS.some(k=>action.toLowerCase().includes(k));
+    if(queueable){
+      addToOfflineQueue(action, params);
+      toast('Tidak ada koneksi — perubahan disimpan ke Antrian Offline.', true);
+      return { ok:true, queued:true, _local:true };
+    }
     toast('Gagal terhubung ke backend: '+err.message, true);
     return null;
   }
+}
+
+// ══════════════════════════════════════════════════
+//  OFFLINE: cache lokal, antrian, export/import
+// ══════════════════════════════════════════════════
+const OFFLINE_CACHE_KEY = 'hrpga_offline_cache';
+const OFFLINE_QUEUE_KEY = 'hrpga_offline_queue';
+
+function persistCacheToLocal(){
+  if(!_ls) return;
+  try{ _ls.setItem(OFFLINE_CACHE_KEY, JSON.stringify({ savedAt:new Date().toISOString(), cache:_cache })); }catch(e){ console.warn('Gagal simpan cache lokal', e); }
+}
+function loadCacheFromLocal(){
+  if(!_ls) return null;
+  try{
+    const raw = _ls.getItem(OFFLINE_CACHE_KEY);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){ return null; }
+}
+function getOfflineQueue(){
+  if(!_ls) return [];
+  try{ return JSON.parse(_ls.getItem(OFFLINE_QUEUE_KEY)||'[]'); }catch(e){ return []; }
+}
+function saveOfflineQueue(q){
+  if(!_ls) return;
+  try{ _ls.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(q)); }catch(e){ console.warn('Gagal simpan antrian offline', e); }
+}
+function addToOfflineQueue(action, params){
+  const q = getOfflineQueue();
+  q.push({ id:'Q-'+Date.now()+'-'+Math.floor(Math.random()*1000), action, params, ts:new Date().toISOString() });
+  saveOfflineQueue(q);
+  if(document.getElementById('syncQueueBox')) renderOfflineQueueUI();
+}
+
+// Sinkronkan semua data modul terbaru dari backend, lalu simpan ke localStorage
+async function syncAllDataNow(btn){
+  if(!USE_BACKEND){ toast('Backend URL belum diatur.', true); return; }
+  if(btn){ btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Menyinkronkan...'; }
+  invalidateCache();
+  const getters = [getSuratData,getSPHData,getSuratDinasData,getAssetData,getKaryawanData,getAbsensiData,getCutiData,getMPPData,getFurnitureData,getBangunanData,getUnitData,getUsersData,getDimensionsData,getSettingsData];
+  for(const fn of getters){ try{ await fn(); }catch(e){ console.warn(e); } }
+  persistCacheToLocal();
+  if(btn){ btn.disabled=false; btn.innerHTML='<i class="fas fa-cloud-arrow-down"></i> Sinkronkan Semua Data'; }
+  toast('Semua data berhasil disinkronkan untuk mode offline.');
+  if(document.getElementById('syncQueueBox')) renderOfflineQueueUI();
+}
+function exportOfflineFile(){
+  const saved = loadCacheFromLocal();
+  if(!saved){ toast('Belum ada data tersinkron. Klik "Sinkronkan Semua Data" dahulu.', true); return; }
+  const blob = new Blob([JSON.stringify(saved,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='hrpga_offline_'+new Date().toISOString().substring(0,10)+'.json'; a.click();
+  URL.revokeObjectURL(url);
+  toast('File offline berhasil diexport. Import file ini di perangkat yang bermasalah.');
+}
+function importOfflineFileInput(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      const parsed = JSON.parse(e.target.result);
+      if(!parsed || !parsed.cache) throw new Error('Format file tidak dikenali.');
+      _cache = Object.assign(_cache, parsed.cache);
+      _ls && _ls.setItem(OFFLINE_CACHE_KEY, JSON.stringify(parsed));
+      toast('Data offline berhasil diimport ('+(parsed.savedAt?fmtDate(parsed.savedAt.substring(0,10)):'')+').');
+      if(document.getElementById('syncQueueBox')){ goto('sync'); }
+    }catch(err){ toast('Gagal import file: '+err.message, true); }
+  };
+  reader.readAsText(file);
+  input.value='';
+}
+function importOfflineFileAtLogin(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      const parsed = JSON.parse(e.target.result);
+      if(!parsed || !parsed.cache) throw new Error('Format file tidak dikenali.');
+      Object.keys(_cache).forEach(k=>{ if(parsed.cache[k]!==undefined) _cache[k]=parsed.cache[k]; });
+      _ls && _ls.setItem(OFFLINE_CACHE_KEY, JSON.stringify(parsed));
+      USE_BACKEND = false; // jangan coba hubungi backend selama sesi offline ini
+      CU = { name:'Mode Offline', role:'Viewer', username:'offline', email:'' };
+      document.getElementById('loginPage').style.display='none';
+      document.getElementById('appPage').style.display='block';
+      document.getElementById('sbName').textContent='Mode Offline';
+      document.getElementById('sbRole').textContent='Viewer (data tersinkron '+(parsed.savedAt?fmtDate(parsed.savedAt.substring(0,10)):'-')+')';
+      document.getElementById('avInit').textContent='O';
+      document.querySelectorAll('.ni[data-p]').forEach(n=>{ n.style.display = n.dataset.p==='settings' ? 'none' : ''; });
+      goto('dashboard');
+      toast('Masuk mode offline — menampilkan data hasil sinkronisasi terakhir.');
+    }catch(err){ toast('Gagal import file: '+err.message, true); }
+  };
+  reader.readAsText(file);
+  input.value='';
+}
+async function flushOfflineQueueNow(btn){
+  const q = getOfflineQueue();
+  if(!q.length){ toast('Antrian offline kosong.'); return; }
+  if(!navigator.onLine){ toast('Perangkat masih offline, coba lagi setelah online.', true); return; }
+  if(btn){ btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Mengirim...'; }
+  let sent=0, failed=0;
+  const remaining=[];
+  for(const item of q){
+    try{
+      const url = new URL(BACKEND_URL);
+      let res;
+      const isWrite = true;
+      if(isWrite){
+        res = await fetch(BACKEND_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+          body: JSON.stringify(Object.assign({action:item.action, token: SESSION_TOKEN}, item.params)) });
+      }
+      const data = await res.json();
+      if(data && data.ok!==false){ sent++; } else { failed++; remaining.push(item); }
+    }catch(e){ remaining.push(item); }
+  }
+  saveOfflineQueue(remaining);
+  if(btn){ btn.disabled=false; btn.innerHTML='<i class="fas fa-paper-plane"></i> Kirim Sekarang'; }
+  invalidateCache();
+  toast(`Antrian terkirim: ${sent} berhasil${failed?', '+failed+' gagal':''}.`, failed>0 && sent===0);
+  renderOfflineQueueUI();
+}
+function clearOfflineQueue(){
+  if(!getOfflineQueue().length){ toast('Antrian sudah kosong.'); return; }
+  if(!confirm('Hapus semua antrian offline yang belum terkirim? Perubahan yang belum tersinkron akan hilang.')) return;
+  saveOfflineQueue([]);
+  toast('Antrian offline dihapus.');
+  renderOfflineQueueUI();
+}
+function renderOfflineQueueUI(){
+  const box = document.getElementById('syncQueueBox');
+  if(!box) return;
+  const q = getOfflineQueue();
+  if(!q.length){
+    box.innerHTML = `<div style="text-align:center;padding:26px 10px;color:var(--tm);">
+      <i class="fas fa-inbox" style="font-size:2rem;opacity:.5;"></i>
+      <p style="margin-top:10px;">Tidak ada antrian. Semua perubahan sudah tersinkron ke backend.</p>
+    </div>`;
+    return;
+  }
+  box.innerHTML = `<div class="tw"><table><thead><tr><th>Aksi</th><th>Waktu</th><th>Ringkasan</th></tr></thead><tbody>
+    ${q.map(it=>`<tr><td>${esc(it.action)}</td><td>${new Date(it.ts).toLocaleString('id-ID')}</td><td>${esc(JSON.stringify(it.params).substring(0,80))}...</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+async function renderSyncPage(){
+  const c = document.getElementById('content');
+  const saved = loadCacheFromLocal();
+  c.innerHTML = `
+    <div class="ph"><div><h1>Sinkronisasi Offline</h1><p>Kelola data offline untuk perangkat yang koneksinya tidak stabil atau sama sekali tidak bisa online.</p></div></div>
+    <div class="tc">
+      <h3><i class="fas fa-database" style="color:var(--pr);"></i> Database Offline (Export)</h3>
+      <p style="font-size:.85rem;color:var(--tm);margin:8px 0 14px;">Untuk perangkat lain yang sama sekali tidak bisa online: sinkronkan semua data di sini (perangkat yang online), export jadi file, lalu import file itu di layar login perangkat yang bermasalah.</p>
+      ${saved?`<p style="font-size:.78rem;color:var(--tm);margin-bottom:10px;">Data tersinkron terakhir: <b>${new Date(saved.savedAt).toLocaleString('id-ID')}</b></p>`:''}
+      <div class="btn-grp">
+        <button class="btn btn-pr btn-sm" onclick="syncAllDataNow(this)"><i class="fas fa-cloud-arrow-down"></i> Sinkronkan Semua Data</button>
+        <button class="btn btn-ac btn-sm" onclick="exportOfflineFile()"><i class="fas fa-file-export"></i> Export ke File (.json)</button>
+        <label class="btn btn-ol btn-sm" style="cursor:pointer;">
+          <i class="fas fa-file-import"></i> Import File (.json)
+          <input type="file" accept="application/json" style="display:none;" onchange="importOfflineFileInput(this)">
+        </label>
+      </div>
+    </div>
+    <div class="tc">
+      <h3><i class="fas fa-clock-rotate-left" style="color:var(--wa);"></i> Antrian Offline (Belum Terkirim)</h3>
+      <p style="font-size:.85rem;color:var(--tm);margin:8px 0 14px;">Perubahan yang tersimpan di perangkat ini saat tidak ada koneksi (dari sesi login sebelumnya) akan terlihat di sini dan bisa dikirim manual kapan saja, tanpa perlu login dulu.</p>
+      <div id="syncQueueBox"></div>
+      <div class="btn-grp" style="margin-top:14px;">
+        <button class="btn btn-ol btn-sm" onclick="renderOfflineQueueUI()"><i class="fas fa-rotate"></i> Refresh</button>
+        <button class="btn btn-pr btn-sm" onclick="flushOfflineQueueNow(this)"><i class="fas fa-paper-plane"></i> Kirim Sekarang</button>
+        <button class="btn btn-dn btn-sm" onclick="clearOfflineQueue()"><i class="fas fa-trash"></i> Hapus Antrian</button>
+      </div>
+    </div>`;
+  renderOfflineQueueUI();
 }
 
 // ══════════════════════════════════════════════════
@@ -450,7 +678,10 @@ async function getData(cacheKey, action, demoData, params={}){
   if(_cache[cacheKey]!==null) return _cache[cacheKey];
   if(USE_BACKEND){
     const res = await api(action, params);
-    if(res && res.ok && Array.isArray(res.data)){ _cache[cacheKey]=res.data; return _cache[cacheKey]; }
+    if(res && res.ok && Array.isArray(res.data)){ _cache[cacheKey]=res.data; persistCacheToLocal(); return _cache[cacheKey]; }
+    // Backend tidak terjangkau (offline) — pakai cache offline terakhir kalau ada
+    const local = loadCacheFromLocal();
+    if(local && local.cache && Array.isArray(local.cache[cacheKey])){ _cache[cacheKey]=local.cache[cacheKey]; return _cache[cacheKey]; }
   }
   _cache[cacheKey] = demoData;
   return _cache[cacheKey];
@@ -704,6 +935,7 @@ async function goto(page){
   else if(page==='unit') await renderModulePage('unit');
   else if(page==='upload') await renderUploadPage();
   else if(page==='reports') await renderReportsPage();
+  else if(page==='sync') await renderSyncPage();
   else if(page==='settings') await renderSettingsPage();
 }
 
@@ -860,18 +1092,23 @@ const MODULES = {
   absensi: {
     label:'Monitoring Absensi', icon:'fa-calendar-check', apiName:'Absensi', idField:'ID', idPrefix:'ABS-',
     getData:getAbsensiData, cacheKey:'absensi',
+    // Format rekap 1 baris = 1 karyawan / 1 periode gaji (tgl 26 s/d tgl 25).
     fields:[
-      {key:'Tanggal', label:'Tanggal', type:'date', required:true},
-      {key:'NIK', label:'NIK', type:'text'},
+      {key:'NIK', label:'NIK', type:'text', required:true},
       {key:'Nama Karyawan', label:'Nama Karyawan', type:'text', required:true},
-      {key:'Departemen / Afdeling', label:'Departemen / Afdeling', type:'select', options:()=>dimOptions('Departemen')},
-      {key:'Status', label:'Status', type:'select', options:()=>dimOptions('Status Absensi'), required:true},
-      {key:'Keterangan', label:'Keterangan', type:'textarea', full:true}
+      {key:'Status', label:'Status', type:'select', options:()=>dimOptions('Status Karyawan')},
+      {key:'Jabatan', label:'Jabatan', type:'text'},
+      {key:'HKE', label:'HKE (Hari Kerja Efektif)', type:'number'},
+      {key:'S1', label:'S1 (Sakit)', type:'number'},
+      {key:'CT', label:'CT (Cuti Tahunan)', type:'number'},
+      {key:'M', label:'M (Mangkir)', type:'number'},
+      {key:'TK', label:'TK (Tanpa Keterangan)', type:'number'},
+      {key:'P1', label:'P1 (Ijin)', type:'number'},
+      {key:'TOTAL', label:'Total', type:'number'}
     ],
-    listColumns:['Tanggal','NIK','Nama Karyawan','Departemen / Afdeling','Status','Keterangan'],
+    listColumns:['NIK','Nama Karyawan','Jabatan','HKE','S1','CT','TK','P1','M','TOTAL'],
     renderCell:(col,row)=>{
-      if(col==='Tanggal') return fmtDate(row[col]);
-      if(col==='Status'){ const s=normStatus(row[col]); const map={M:'br',H:'bg',S:'by',I:'bb',C:'bp'}; return badge(row[col], map[s]||'bn'); }
+      if(col==='M'){ const v=Number(row[col]||0); return v>8?badge(v,'br'):esc(v); }
       return esc(row[col]);
     }
   },
@@ -924,53 +1161,112 @@ const MODULES = {
     }
   }
 };
-function assetItemModule(sheetKey, label, icon){
-  return {
-    label, icon, apiName: sheetKey.charAt(0).toUpperCase()+sheetKey.slice(1), idField:'No', idPrefix:'',
-    getData: ({furniture:getFurnitureData, bangunan:getBangunanData, unit:getUnitData})[sheetKey], cacheKey: sheetKey,
-    fields:[
-      {key:'Nama Barang', label:'Nama Barang', type:'text', required:true, full:true},
-      {key:'Kode Barang', label:'Kode Barang', type:'text'},
-      {key:'Jumlah', label:'Jumlah', type:'number'},
-      {key:'Satuan', label:'Satuan', type:'select', options:()=>dimOptions('Satuan Asset')},
-      {key:'Merk', label:'Merk', type:'text'},
-      {key:'Spesifikasi', label:'Spesifikasi', type:'text'},
-      {key:'Serial Number', label:'Serial Number', type:'text'},
-      {key:'Lokasi Aktiva', label:'Lokasi Aktiva', type:'text', required:true},
-      {key:'Kode Lokasi Aktiva', label:'Kode Lokasi Aktiva', type:'text'},
-      {key:'Bulan Perolehan', label:'Bulan Perolehan', type:'text', ph:'01-12'},
-      {key:'Tahun Perolehan', label:'Tahun Perolehan', type:'number'},
-      {key:'Penanggung Jawab', label:'Penanggung Jawab', type:'text'},
-      {key:'Jabatan', label:'Jabatan', type:'text'},
-      {key:'Kondisi Baik', label:'Kondisi Baik (isi V)', type:'text'},
-      {key:'Kondisi Rusak', label:'Kondisi Rusak (isi V)', type:'text'},
-      {key:'Kondisi Perbaikan', label:'Dalam Perbaikan (isi V)', type:'text'},
-      {key:'Kodefikasi Asset', label:'Kodefikasi Asset', type:'text'},
-      {key:'Harga', label:'Harga (Rp)', type:'number'},
-      {key:'Register Asset', label:'Register Asset', type:'text', full:true},
-      {key:'Keterangan', label:'Keterangan', type:'textarea', full:true}
-    ],
-    listColumns:['Nama Barang','Kode Barang','Jumlah','Lokasi Aktiva','Penanggung Jawab','Tahun Perolehan','Harga'],
-    renderCell:(col,row)=>{
-      if(col==='Harga') return fmtMoney(row[col]);
-      if(col==='Nama Barang'){
-        const kondisi = row['Kondisi Rusak'] ? badge('Rusak','br') : (row['Kondisi Perbaikan']?badge('Perbaikan','by'):badge('Baik','bg'));
-        return esc(row[col])+' '+kondisi;
-      }
-      return esc(row[col]);
-    },
-    printTitle:()=> 'Kartu Asset', printBody:(row,s)=>printAssetItemBody(row,s)
-  };
-}
-MODULES.furniture = assetItemModule('furniture','Asset Furniture','fa-chair');
-MODULES.bangunan  = assetItemModule('bangunan','Asset Bangunan','fa-building');
-MODULES.unit      = assetItemModule('unit','Asset Unit','fa-warehouse');
+// ── Asset Furniture (header: No, Nama_Barang, kode_Barang, Jumlah, Sat, ... ) ──
+MODULES.furniture = {
+  label:'Asset Furniture', icon:'fa-chair', apiName:'Furniture', idField:'No', idPrefix:'',
+  getData:getFurnitureData, cacheKey:'furniture',
+  fields:[
+    {key:'Nama_Barang', label:'Nama Barang', type:'text', required:true, full:true},
+    {key:'kode_Barang', label:'Kode Barang', type:'text'},
+    {key:'Jumlah', label:'Jumlah', type:'number'},
+    {key:'Sat', label:'Satuan', type:'select', options:()=>dimOptions('Satuan Asset')},
+    {key:'Registrasi_Kodefikasi', label:'Registrasi Kodefikasi', type:'text'},
+    {key:'Merk', label:'Merk', type:'text'},
+    {key:'Spesifikasi', label:'Spesifikasi', type:'text'},
+    {key:'Serial_Number', label:'Serial Number', type:'text'},
+    {key:'Lokasi_Aktiva', label:'Lokasi Aktiva', type:'text', required:true},
+    {key:'Kode_Lokasi_Aktiva', label:'Kode Lokasi Aktiva', type:'text'},
+    {key:'Bulan_Perolehan', label:'Bulan Perolehan', type:'text', ph:'01-12'},
+    {key:'Tahun_Perolehan_', label:'Tahun Perolehan', type:'number'},
+    {key:'Penanggung_Jawab', label:'Penanggung Jawab', type:'text'},
+    {key:'Jabatan', label:'Jabatan', type:'text'},
+    {key:'Baik', label:'Kondisi Baik (isi V)', type:'text'},
+    {key:'Rusak', label:'Kondisi Rusak (isi V)', type:'text'},
+    {key:'Perbaikan', label:'Dalam Perbaikan (isi V)', type:'text'},
+    {key:'Kodefikasi_Aseet', label:'Kodefikasi Asset', type:'text'},
+    {key:'Harga', label:'Harga (Rp)', type:'number'},
+    {key:'Register_Asset', label:'Register Asset', type:'text', full:true},
+    {key:'Keterangan', label:'Keterangan', type:'textarea', full:true}
+  ],
+  listColumns:['Nama_Barang','kode_Barang','Jumlah','Lokasi_Aktiva','Penanggung_Jawab','Tahun_Perolehan_','Harga'],
+  renderCell:(col,row)=>{
+    if(col==='Harga') return fmtMoney(row[col]);
+    if(col==='Nama_Barang'){
+      const kondisi = row['Rusak'] ? badge('Rusak','br') : (row['Perbaikan']?badge('Perbaikan','by'):badge('Baik','bg'));
+      return esc(row[col])+' '+kondisi;
+    }
+    return esc(row[col]);
+  },
+  printTitle:()=> 'Kartu Asset Furniture', printBody:(row,s)=>printFurnitureBody(row,s)
+};
 
-let _moduleFilter = { search:'', type:'Semua' };
+// ── Asset Bangunan (header: KEBUN, AFD, KODE_BANGUNAN, JENIS, SAT, ... ) ──
+// Catatan: kolom "AFD" muncul 2x pada header asli (setelah KEBUN & setelah
+// BLOK) — kolom kedua disimpan sebagai AFD_2 supaya tidak bentrok sebagai key.
+MODULES.bangunan = {
+  label:'Asset Bangunan', icon:'fa-building', apiName:'Bangunan', idField:'KODE_BANGUNAN', idPrefix:'',
+  getData:getBangunanData, cacheKey:'bangunan',
+  fields:[
+    {key:'KEBUN', label:'Kebun', type:'text', required:true},
+    {key:'AFD', label:'Afd', type:'text'},
+    {key:'KODE_BANGUNAN', label:'Kode Bangunan', type:'text'},
+    {key:'JENIS', label:'Jenis Bangunan', type:'text', required:true, full:true},
+    {key:'SAT', label:'Satuan', type:'select', options:()=>dimOptions('Satuan Asset')},
+    {key:'HARGA_BANGUNAN', label:'Harga Bangunan (Rp)', type:'number'},
+    {key:'DIBANGUN_OLEH', label:'Dibangun Oleh', type:'text'},
+    {key:'BLOK', label:'Blok', type:'text'},
+    {key:'AFD_2', label:'Afd (Blok)', type:'text'},
+    {key:'LUAS_(M2)', label:'Luas (M2)', type:'number'},
+    {key:'QTY', label:'Qty', type:'number'},
+    {key:'UTILITY', label:'Utility', type:'text'},
+    {key:'TAHUN_PEROLEHAN', label:'Tahun Perolehan', type:'number'},
+    {key:'KETERANGAN', label:'Keterangan', type:'textarea', full:true}
+  ],
+  listColumns:['KODE_BANGUNAN','JENIS','KEBUN','BLOK','QTY','TAHUN_PEROLEHAN','HARGA_BANGUNAN'],
+  renderCell:(col,row)=>{
+    if(col==='HARGA_BANGUNAN') return fmtMoney(row[col]);
+    return esc(row[col]);
+  },
+  printTitle:()=> 'Kartu Asset Bangunan', printBody:(row,s)=>printBangunanBody(row,s)
+};
+
+// ── Asset Unit (header: JENIS, NAMA_UNIT, KODE_UNIT, NO.POLISI, ... ) ──
+// Catatan: header asli "KODE / UNIT" (2 baris di Excel) dinormalisasi jadi
+// KODE_UNIT.
+MODULES.unit = {
+  label:'Asset Unit', icon:'fa-warehouse', apiName:'Unit', idField:'KODE_UNIT', idPrefix:'',
+  getData:getUnitData, cacheKey:'unit',
+  fields:[
+    {key:'JENIS', label:'Jenis', type:'text', required:true},
+    {key:'NAMA_UNIT', label:'Nama Unit', type:'text', required:true, full:true},
+    {key:'KODE_UNIT', label:'Kode Unit', type:'text'},
+    {key:'NO.POLISI', label:'No Polisi', type:'text'},
+    {key:'MERK/TYPE', label:'Merk / Type', type:'text'},
+    {key:'NO_CHASIS', label:'No Chasis', type:'text'},
+    {key:'NO_MESIN', label:'No Mesin', type:'text'},
+    {key:'PEROLEHAN', label:'Perolehan', type:'text', ph:'MM/YYYY'},
+    {key:'BBM', label:'BBM', type:'text'},
+    {key:'KONDISI_UNIT', label:'Kondisi Unit', type:'text'},
+    {key:'ALOKASI', label:'Alokasi', type:'text'},
+    {key:'USER', label:'User', type:'text'}
+  ],
+  listColumns:['KODE_UNIT','NAMA_UNIT','JENIS','NO.POLISI','KONDISI_UNIT','ALOKASI','USER'],
+  renderCell:(col,row)=>{
+    if(col==='NAMA_UNIT'){
+      const kondisi = /rusak/i.test(String(row['KONDISI_UNIT']||'')) ? badge('Rusak','br') : badge('Baik','bg');
+      return esc(row[col])+' '+kondisi;
+    }
+    return esc(row[col]);
+  },
+  printTitle:()=> 'Kartu Asset Unit', printBody:(row,s)=>printUnitBody(row,s)
+};
+
+let _moduleFilter = { search:'', type:'Semua', page:1 };
+const PAGE_SIZE = 15;
 
 async function renderModulePage(key, bannerHtml){
   const mod = MODULES[key];
-  _moduleFilter = { search:'', type:'Semua' };
+  _moduleFilter = { search:'', type:'Semua', page:1 };
   const c = document.getElementById('content');
   const tabsHtml = mod.typeField ? `
     <div class="tabs" id="modTabs">
@@ -991,16 +1287,41 @@ async function renderModulePage(key, bannerHtml){
         </div>
       </div>
       <div class="tw"><table id="modTable"><thead><tr>${mod.listColumns.map(cl=>`<th>${esc(cl)}</th>`).join('')}<th>Aksi</th></tr></thead><tbody></tbody></table></div>
+      <div class="pgn" id="modPgn"></div>
     </div>`;
   if(mod.typeField){
     document.getElementById('modTabs').addEventListener('click', e=>{
       const b=e.target.closest('.tab-btn'); if(!b) return;
       document.querySelectorAll('#modTabs .tab-btn').forEach(x=>x.classList.remove('active'));
-      b.classList.add('active'); _moduleFilter.type=b.dataset.t; renderModuleTable(key);
+      b.classList.add('active'); _moduleFilter.type=b.dataset.t; _moduleFilter.page=1; renderModuleTable(key);
     });
   }
-  document.getElementById('modSearch').addEventListener('input', debounce(e=>{ _moduleFilter.search=e.target.value.toLowerCase(); renderModuleTable(key); },250));
+  document.getElementById('modSearch').addEventListener('input', debounce(e=>{ _moduleFilter.search=e.target.value.toLowerCase(); _moduleFilter.page=1; renderModuleTable(key); },250));
   await renderModuleTable(key);
+}
+
+function renderPaginationHtml(containerId, total, page, pageSize, onGo){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  const totalPages = Math.max(1, Math.ceil(total/pageSize));
+  page = Math.min(Math.max(1,page), totalPages);
+  if(total<=pageSize){ el.innerHTML=''; return; }
+  const from = total===0?0:((page-1)*pageSize+1), to = Math.min(page*pageSize, total);
+  let nums = '';
+  const win = 2;
+  for(let p=1;p<=totalPages;p++){
+    if(p===1||p===totalPages||(p>=page-win&&p<=page+win)){
+      nums += `<button class="${p===page?'active':''}" data-pg="${p}">${p}</button>`;
+    } else if(p===page-win-1||p===page+win+1){ nums += `<span style="padding:0 2px;">…</span>`; }
+  }
+  el.innerHTML = `
+    <div>Menampilkan ${from}–${to} dari ${total} data</div>
+    <div class="pgn-btns">
+      <button data-pg="${page-1}" ${page<=1?'disabled':''}><i class="fas fa-chevron-left"></i></button>
+      ${nums}
+      <button data-pg="${page+1}" ${page>=totalPages?'disabled':''}><i class="fas fa-chevron-right"></i></button>
+    </div>`;
+  el.onclick = e=>{ const b=e.target.closest('button[data-pg]'); if(!b||b.disabled) return; onGo(Number(b.dataset.pg)); };
 }
 
 async function renderModuleTable(key){
@@ -1014,8 +1335,13 @@ async function renderModuleTable(key){
   }
   rows = rows.slice().reverse();
   const tbody = document.querySelector('#modTable tbody');
-  if(!rows.length){ tbody.innerHTML = `<tr class="empty-row"><td colspan="${mod.listColumns.length+1}">Belum ada data.</td></tr>`; return; }
-  tbody.innerHTML = rows.map(r=>`
+  if(!rows.length){ tbody.innerHTML = `<tr class="empty-row"><td colspan="${mod.listColumns.length+1}">Belum ada data.</td></tr>`; document.getElementById('modPgn').innerHTML=''; return; }
+  const total = rows.length;
+  const totalPages = Math.max(1, Math.ceil(total/PAGE_SIZE));
+  if(_moduleFilter.page>totalPages) _moduleFilter.page = totalPages;
+  const start = (_moduleFilter.page-1)*PAGE_SIZE;
+  const pageRows = rows.slice(start, start+PAGE_SIZE);
+  tbody.innerHTML = pageRows.map(r=>`
     <tr>${mod.listColumns.map(c=>`<td>${mod.renderCell(c,r)}</td>`).join('')}
       <td>
         <div class="btn-grp">
@@ -1025,6 +1351,7 @@ async function renderModuleTable(key){
           <button class="btn btn-dn btn-sm" onclick='deleteModuleRow("${key}", ${r._row})' title="Hapus"><i class="fas fa-trash"></i></button>
         </div>
       </td></tr>`).join('');
+  renderPaginationHtml('modPgn', total, _moduleFilter.page, PAGE_SIZE, (p)=>{ _moduleFilter.page=p; renderModuleTable(key); });
 }
 
 function fieldOptions(f){ return typeof f.options==='function' ? f.options() : (f.options||[]); }
@@ -1103,8 +1430,8 @@ function exportModuleCSV(key){
 // ── PRINT ENGINE ──────────────────────────────────────────────────────────
 function letterheadHtml(settings){
   return `
-  <div style="display:flex;align-items:center;gap:14px;border-bottom:3px solid #33414a;padding-bottom:10px;margin-bottom:18px;">
-    ${settings.LogoUrl?`<img src="${esc(settings.LogoUrl)}" style="width:60px;height:60px;object-fit:contain">`:''}
+  <div style="display:flex;align-items:center;justify-content:center;gap:14px;text-align:center;border-bottom:3px solid #33414a;padding-bottom:10px;margin-bottom:18px;">
+    ${settings.LogoUrl?`<img src="${esc(settings.LogoUrl)}" style="width:60px;height:60px;object-fit:contain;flex-shrink:0;">`:''}
     <div>
       <div style="font-weight:700;font-size:1.15rem;text-transform:uppercase;">${esc(settings.CompanyName||'')}</div>
       <div style="font-size:.82rem;">${esc(settings.CompanyAddress||'')}</div>
@@ -1249,47 +1576,88 @@ function printSuratDinasBody(row, s){
   ${signBlockHtml(s, 'Pemohon', 'Menyetujui, HR & PGA', row['Disetujui Oleh']||s.DirectorName)}`;
 }
 function printCutiBody(row, s){
+  const today = new Date();
+  const tgl = today.getDate()+'/'+String(today.getMonth()+1).padStart(2,'0')+'/'+today.getFullYear();
+  const isApproved = row['Status Pengajuan']==='Disetujui';
   return `
   ${letterheadHtml(s)}
-  <h3 style="text-align:center;margin-bottom:16px;">FORMULIR PERMOHONAN CUTI</h3>
-  <table style="width:100%;font-size:.88rem;">
+  <table style="width:100%;font-size:.9rem;margin-bottom:6px;">
     <tr>
-      <td style="width:52%;vertical-align:top;">
+      <td style="text-align:center;font-weight:bold;text-decoration:underline;font-size:1.05rem;">FORMULIR PERMOHONAN CUTI</td>
+    </tr>
+  </table>
+  <table style="width:100%;font-size:.85rem;margin-top:10px;">
+    <tr>
+      <td style="width:60%;vertical-align:top;">
         <table style="width:100%;">
-          <tr><td style="width:110px;padding:3px 0;">Nama</td><td>: ${esc(row['Nama'])}</td></tr>
-          <tr><td style="padding:3px 0;">Jabatan</td><td>: ${esc(row['Jabatan']||'-')}</td></tr>
-          <tr><td style="padding:3px 0;">Status</td><td>: ${esc(row['Status Karyawan']||'-')}</td></tr>
-          <tr><td style="padding:3px 0;">Tgl Masuk Kerja</td><td>: ${fmtDate(row['Tanggal Masuk Kerja'])}</td></tr>
-          <tr><td style="padding:3px 0;">Masa Kerja</td><td>: ${esc(row['Masa Kerja (Tahun)']||'-')} Tahun</td></tr>
+          <tr><td style="width:105px;padding:2px 0;">Nama</td><td>: <u>${esc(row['Nama'])}</u></td></tr>
+          <tr><td style="padding:2px 0;">Jabatan</td><td>: ${esc(row['Jabatan']||'-')}</td></tr>
+          <tr><td style="padding:2px 0;">Status</td><td>: ${esc(row['Status Karyawan']||'-')}</td></tr>
+          <tr><td style="padding:2px 0;">Tgl Masuk</td><td>: ${fmtDate(row['Tanggal Masuk Kerja'])}</td></tr>
+          <tr><td style="padding:2px 0;">Masa Kerja</td><td>: ${esc(row['Masa Kerja (Tahun)']||'-')} Tahun</td></tr>
         </table>
       </td>
-      <td style="width:48%;vertical-align:top;">
-        <table style="width:100%;">
-          <tr><td style="width:170px;padding:3px 0;">Jenis Pengajuan</td><td>: <u>${esc(row['Jenis Cuti']||'Cuti Tahunan')}</u></td></tr>
-        </table>
+      <td style="width:40%;vertical-align:top;text-align:right;">
+        <div>Jenis Pengajuan: <b><u>${esc(row['Jenis Cuti']||'Cuti Tahunan')}</u></b></div>
       </td>
     </tr>
   </table>
-  <table style="width:100%;border-collapse:collapse;font-size:.85rem;margin-top:14px;" border="1" cellpadding="6">
-    <tr><td style="width:60%;">Sisa hak cuti Tahun sebelumnya</td><td>: ${esc(row['Sisa Cuti Tahun Sebelumnya']||0)} Hari</td></tr>
-    <tr><td>Cuti yang telah diambil + izin potong cuti tahun ini</td><td>: ${esc(row['Cuti Yang Telah Diambil Tahun Ini']||0)} Hari</td></tr>
-    <tr><td>Cuti yang diminta (${fmtDate(row['Tanggal Cuti Dari'])} s/d ${fmtDate(row['Tanggal Cuti Sampai'])})</td><td>: ${esc(row['Jumlah Hari Diminta']||0)} Hari</td></tr>
-    <tr><td><b>Sisa hak cuti telah permintaan cuti ini</b></td><td><b>: ${esc(row['Sisa Cuti Setelah Ini']||0)} Hari</b></td></tr>
+  <table style="width:100%;border-collapse:collapse;font-size:.82rem;margin-top:12px;" border="1" cellpadding="6">
+    <tr><td style="width:38%;">Sisa hak cuti Tahun sebelumnya</td>
+        <td style="width:37%;">${fmtDate(row['Tanggal Masuk Kerja'])} s/d ${fmtDate(row['Tanggal Cuti Dari'])}</td>
+        <td style="text-align:center;">${esc(row['Sisa Cuti Tahun Sebelumnya']||0)} Hari</td></tr>
+    <tr><td>Cuti yang telah diambil + izin potong cuti tahun ini</td>
+        <td>&nbsp;</td>
+        <td style="text-align:center;">${esc(row['Cuti Yang Telah Diambil Tahun Ini']||0)} Hari</td></tr>
+    <tr><td>Cuti yang diminta</td>
+        <td>${fmtDate(row['Tanggal Cuti Dari'])} s/d ${fmtDate(row['Tanggal Cuti Sampai'])}</td>
+        <td style="text-align:center;">${esc(row['Jumlah Hari Diminta']||0)} Hari</td></tr>
+    <tr><td><b>Sisa hak cuti telah permintaan cuti ini</b></td>
+        <td>&nbsp;</td>
+        <td style="text-align:center;"><b>${esc(row['Sisa Cuti Setelah Ini']||0)} Hari</b></td></tr>
   </table>
-  <p style="font-size:.85rem;margin-top:10px;">Catatan: ${esc(row['Catatan']||'-')}</p>
-  <p style="font-size:.85rem;text-align:right;margin-top:16px;">${esc(s.City||'')}, ${fmtDate(row['Tanggal Pengajuan'])}</p>
-  <table style="width:100%;font-size:.85rem;margin-top:34px;text-align:center;">
+  <table style="width:100%;font-size:.82rem;margin-top:10px;">
+    <tr><td style="width:230px;vertical-align:top;padding:2px 0;">Catatan Pemeriksaan / Personalia</td><td>: Telah diperiksa dan disetujui / tidak sesuai</td></tr>
+    <tr><td style="vertical-align:top;padding:2px 0;">Dengan catatan kami karena</td><td>: ${esc(row['Catatan']||'..............................................................')}</td></tr>
+    <tr><td style="padding:2px 0;">Pengajuan Dana Cuti</td><td>: ..............................................................</td></tr>
+  </table>
+  <table style="width:100%;font-size:.85rem;margin-top:24px;">
     <tr>
-      <td style="width:50%;">Kasie HRD<div style="height:55px;"></div><b>&nbsp;</b></td>
-      <td style="width:50%;">Pemohon,<div style="height:55px;"></div><b>${esc(row['Nama'])}</b></td>
+      <td style="width:50%;">${esc(s.City||'Kebun')}, ${fmtDate(row['Tanggal Pengajuan'])||tgl}</td>
+      <td style="width:50%;text-align:center;">Delegasi<div style="height:45px;"></div><b>${esc(row['Delegasi']||'..............................')}</b></td>
     </tr>
   </table>
-  <table style="width:100%;font-size:.85rem;margin-top:24px;text-align:center;">
+  <table style="width:100%;border-collapse:collapse;font-size:.8rem;margin-top:18px;" border="1" cellpadding="10">
     <tr>
-      <td style="width:50%;">Pimpinan (Disetujui / Tidak Disetujui)<div style="height:55px;"></div><b>${esc(row['Disetujui Oleh']||'')}</b></td>
-      <td style="width:50%;">Status Pengajuan: <b>${esc(row['Status Pengajuan']||'Menunggu Persetujuan')}</b></td>
+      <td style="width:50%;vertical-align:top;">
+        <b>Catatan Ass. Kepala / Ka. Kebun</b>
+        <p style="margin-top:6px;">Hari cuti diminta diatas sesuai</p>
+        <div style="height:34px;"></div>
+        <p>Tanggal: .......................20......</p>
+      </td>
+      <td style="width:50%;vertical-align:top;">
+        <b>Catatan KTU</b>
+        <p style="margin-top:6px;">Telah diperiksa / tidak sesuai dengan<br>Catatan Kami Karena:</p>
+        <div style="height:20px;"></div>
+        <p>Tanggal: .......................20......</p>
+      </td>
     </tr>
-  </table>`;
+    <tr>
+      <td style="width:50%;vertical-align:top;">
+        <b>Catatan Pimpinan</b>
+        <p style="margin-top:6px;">Permohonan disetujui / Tidak disetujui<br>Karena:</p>
+        <div style="height:20px;"></div>
+        <p>Tanggal: .......................20......</p>
+      </td>
+      <td style="width:50%;vertical-align:top;">
+        <b>Catatan Personalia</b>
+        <p style="margin-top:6px;">Tanggal: .......................20......</p>
+        <p>Masuk Kerja seperti biasa</p>
+        <p>Tanggal: .......................20......</p>
+      </td>
+    </tr>
+  </table>
+  <p style="font-size:.78rem;margin-top:10px;color:#555;">Status Pengajuan saat ini: <b>${esc(row['Status Pengajuan']||'Menunggu Persetujuan')}</b>${isApproved?(' — Disetujui oleh '+esc(row['Disetujui Oleh']||'-')):''}</p>`;
 }
 function printKaryawanBody(row, s){
   return `
@@ -1313,26 +1681,113 @@ function printKaryawanBody(row, s){
   </table>
   ${signBlockHtml(s, 'Karyawan', 'Diketahui, HR & PGA', s.DirectorName)}`;
 }
-function printAssetItemBody(row, s){
-  const kondisi = row['Kondisi Rusak'] ? 'Rusak' : (row['Kondisi Perbaikan'] ? 'Dalam Perbaikan' : 'Baik');
+function printFurnitureBody(row, s){
+  const kondisi = row['Rusak'] ? 'Rusak' : (row['Perbaikan'] ? 'Dalam Perbaikan' : 'Baik');
   return `
   ${letterheadHtml(s)}
-  <h3 style="text-align:center;text-decoration:underline;margin-bottom:14px;">KARTU ASSET</h3>
+  <h3 style="text-align:center;text-decoration:underline;margin-bottom:14px;">KARTU ASSET FURNITURE</h3>
   <table style="width:100%;font-size:.88rem;">
-    <tr><td style="width:190px;padding:3px 0;">Nama Barang</td><td>: ${esc(row['Nama Barang'])}</td></tr>
-    <tr><td style="padding:3px 0;">Kode Barang</td><td>: ${esc(row['Kode Barang']||'-')}</td></tr>
-    <tr><td style="padding:3px 0;">Jumlah</td><td>: ${esc(row['Jumlah']||'-')} ${esc(row['Satuan']||'')}</td></tr>
+    <tr><td style="width:190px;padding:3px 0;">Nama Barang</td><td>: ${esc(row['Nama_Barang'])}</td></tr>
+    <tr><td style="padding:3px 0;">Kode Barang</td><td>: ${esc(row['kode_Barang']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Jumlah</td><td>: ${esc(row['Jumlah']||'-')} ${esc(row['Sat']||'')}</td></tr>
+    <tr><td style="padding:3px 0;">Registrasi Kodefikasi</td><td>: ${esc(row['Registrasi_Kodefikasi']||'-')}</td></tr>
     <tr><td style="padding:3px 0;">Merk</td><td>: ${esc(row['Merk']||'-')}</td></tr>
     <tr><td style="padding:3px 0;">Spesifikasi</td><td>: ${esc(row['Spesifikasi']||'-')}</td></tr>
-    <tr><td style="padding:3px 0;">Serial Number</td><td>: ${esc(row['Serial Number']||'-')}</td></tr>
-    <tr><td style="padding:3px 0;">Lokasi Aktiva</td><td>: ${esc(row['Lokasi Aktiva']||'-')}</td></tr>
-    <tr><td style="padding:3px 0;">Bulan/Tahun Perolehan</td><td>: ${esc(row['Bulan Perolehan']||'-')} / ${esc(row['Tahun Perolehan']||'-')}</td></tr>
-    <tr><td style="padding:3px 0;">Penanggung Jawab</td><td>: ${esc(row['Penanggung Jawab']||'-')} (${esc(row['Jabatan']||'-')})</td></tr>
+    <tr><td style="padding:3px 0;">Serial Number</td><td>: ${esc(row['Serial_Number']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Lokasi Aktiva</td><td>: ${esc(row['Lokasi_Aktiva']||'-')} (${esc(row['Kode_Lokasi_Aktiva']||'-')})</td></tr>
+    <tr><td style="padding:3px 0;">Bulan/Tahun Perolehan</td><td>: ${esc(row['Bulan_Perolehan']||'-')} / ${esc(row['Tahun_Perolehan_']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Penanggung Jawab</td><td>: ${esc(row['Penanggung_Jawab']||'-')} (${esc(row['Jabatan']||'-')})</td></tr>
     <tr><td style="padding:3px 0;">Kondisi</td><td>: ${kondisi}</td></tr>
-    <tr><td style="padding:3px 0;">Kodefikasi Asset</td><td>: ${esc(row['Kodefikasi Asset']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Kodefikasi Asset</td><td>: ${esc(row['Kodefikasi_Aseet']||'-')}</td></tr>
     <tr><td style="padding:3px 0;">Harga</td><td>: ${fmtMoney(row['Harga'])}</td></tr>
-    <tr><td style="padding:3px 0;">Register Asset</td><td>: ${esc(row['Register Asset']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Register Asset</td><td>: ${esc(row['Register_Asset']||'-')}</td></tr>
     <tr><td style="padding:3px 0;vertical-align:top;">Keterangan</td><td>: ${esc(row['Keterangan']||'-')}</td></tr>
+  </table>
+  ${signBlockHtml(s, 'Penanggung Jawab', 'Diketahui, HR & PGA', s.DirectorName)}`;
+}
+// Cetak "Daftar Inventaris Perabot Rumah Staff" — MENGGABUNGKAN semua baris
+// Furniture yang punya Lokasi_Aktiva & Penanggung_Jawab yang SAMA jadi SATU
+// lembar (format mengikuti contoh: 1 lembar = 1 rumah/1 penanggung jawab,
+// berisi daftar semua barang di rumah tsb), bukan 1 lembar per barang.
+function printFurnitureGroupBody(rows, s){
+  const first = rows[0] || {};
+  const rowsHtml = rows.map((row,i)=>{
+    const kondisi = row['Rusak'] ? 'Rusak' : (row['Perbaikan'] ? 'Dalam Perbaikan' : 'Baik');
+    const merk = [row['Merk'], row['Spesifikasi']].filter(Boolean).join(' - ') || '-';
+    return `<tr>
+      <td style="text-align:center;">${i+1}</td>
+      <td style="word-wrap:break-word;">${esc(row['Nama_Barang']||'-')}</td>
+      <td style="text-align:center;">${esc(row['Sat']||'-')}</td>
+      <td style="word-wrap:break-word;">${esc(merk)}</td>
+      <td style="text-align:center;">${esc(row['Jumlah']||'-')}</td>
+      <td style="text-align:center;">${kondisi}</td>
+      <td style="word-wrap:break-word;">${esc(row['Keterangan']||'')}</td>
+    </tr>`;
+  }).join('');
+  return `
+  ${letterheadHtml(s)}
+  <h3 style="text-align:center;text-decoration:underline;margin-bottom:14px;">DAFTAR INVENTARIS PERABOT RUMAH STAFF</h3>
+  <table style="width:100%;font-size:.88rem;margin-bottom:12px;">
+    <tr><td style="width:190px;padding:3px 0;">Nama</td><td>: <b>${esc(first['Penanggung_Jawab']||'-')}</b>${first['Jabatan']?(' ('+esc(first['Jabatan'])+')'):''}</td></tr>
+    <tr><td style="padding:3px 0;">Tempat / No Rumah</td><td>: <b>${esc(first['Lokasi_Aktiva']||'-')}</b>${first['Kode_Lokasi_Aktiva']?(' ('+esc(first['Kode_Lokasi_Aktiva'])+')'):''}</td></tr>
+  </table>
+  <table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:.74rem;" border="1" cellpadding="4">
+    <thead>
+      <tr style="background:#dbe9f7;">
+        <th style="width:4%;">NO</th>
+        <th style="width:21%;">Jenis Perabot</th>
+        <th style="width:6%;">Sat</th>
+        <th style="width:30%;">Merk</th>
+        <th style="width:7%;">Jml</th>
+        <th style="width:12%;">Kondisi</th>
+        <th style="width:20%;">Keterangan</th>
+      </tr>
+    </thead>
+    <tbody>${rowsHtml}</tbody>
+  </table>
+  <p style="font-size:.72rem;margin-top:8px;color:#555;">
+    Note:<br>1. Dilarang memindahkan perabot tanpa persetujuan GM.<br>
+    2. Penanggung jawab wajib menjaga dan merawat perabot.<br>
+    3. Hilangnya perabot menjadi tanggung jawab pemilik rumah.
+  </p>
+  ${signBlockHtml(s, 'Diserahkan oleh, HR & PGA', 'Diterima oleh', first['Penanggung_Jawab'])}`;
+}
+function printBangunanBody(row, s){
+  return `
+  ${letterheadHtml(s)}
+  <h3 style="text-align:center;text-decoration:underline;margin-bottom:14px;">KARTU ASSET BANGUNAN</h3>
+  <table style="width:100%;font-size:.88rem;">
+    <tr><td style="width:190px;padding:3px 0;">Jenis Bangunan</td><td>: ${esc(row['JENIS'])}</td></tr>
+    <tr><td style="padding:3px 0;">Kode Bangunan</td><td>: ${esc(row['KODE_BANGUNAN']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Kebun / Afd</td><td>: ${esc(row['KEBUN']||'-')} / ${esc(row['AFD']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Blok / Afd</td><td>: ${esc(row['BLOK']||'-')} / ${esc(row['AFD_2']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Luas</td><td>: ${esc(row['LUAS_(M2)']||'-')} M2</td></tr>
+    <tr><td style="padding:3px 0;">Qty / Satuan</td><td>: ${esc(row['QTY']||'-')} ${esc(row['SAT']||'')}</td></tr>
+    <tr><td style="padding:3px 0;">Dibangun Oleh</td><td>: ${esc(row['DIBANGUN_OLEH']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Utility</td><td>: ${esc(row['UTILITY']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Tahun Perolehan</td><td>: ${esc(row['TAHUN_PEROLEHAN']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Harga Bangunan</td><td>: ${fmtMoney(row['HARGA_BANGUNAN'])}</td></tr>
+    <tr><td style="padding:3px 0;vertical-align:top;">Keterangan</td><td>: ${esc(row['KETERANGAN']||'-')}</td></tr>
+  </table>
+  ${signBlockHtml(s, 'Penanggung Jawab', 'Diketahui, HR & PGA', s.DirectorName)}`;
+}
+function printUnitBody(row, s){
+  return `
+  ${letterheadHtml(s)}
+  <h3 style="text-align:center;text-decoration:underline;margin-bottom:14px;">KARTU ASSET UNIT</h3>
+  <table style="width:100%;font-size:.88rem;">
+    <tr><td style="width:190px;padding:3px 0;">Nama Unit</td><td>: ${esc(row['NAMA_UNIT'])}</td></tr>
+    <tr><td style="padding:3px 0;">Jenis</td><td>: ${esc(row['JENIS']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Kode Unit</td><td>: ${esc(row['KODE_UNIT']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">No Polisi</td><td>: ${esc(row['NO.POLISI']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Merk / Type</td><td>: ${esc(row['MERK/TYPE']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">No Chasis</td><td>: ${esc(row['NO_CHASIS']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">No Mesin</td><td>: ${esc(row['NO_MESIN']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Perolehan</td><td>: ${esc(row['PEROLEHAN']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">BBM</td><td>: ${esc(row['BBM']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Kondisi</td><td>: ${esc(row['KONDISI_UNIT']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Alokasi</td><td>: ${esc(row['ALOKASI']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">User</td><td>: ${esc(row['USER']||'-')}</td></tr>
   </table>
   ${signBlockHtml(s, 'Penanggung Jawab', 'Diketahui, HR & PGA', s.DirectorName)}`;
 }
@@ -1359,20 +1814,69 @@ function printAssetBody(row, s){
 async function printModuleRow(key, row){
   const mod = MODULES[key];
   const settings = await getSettingsData();
+  // Asset Furniture: gabungkan semua barang dengan Lokasi_Aktiva &
+  // Penanggung_Jawab yang sama jadi satu lembar cetak (bukan 1 lembar/barang).
+  if(key==='furniture'){
+    const all = await getFurnitureData();
+    const grouped = all.filter(r =>
+      (r['Lokasi_Aktiva']||'') === (row['Lokasi_Aktiva']||'') &&
+      (r['Penanggung_Jawab']||'') === (row['Penanggung_Jawab']||'')
+    );
+    const body = printFurnitureGroupBody(grouped.length?grouped:[row], settings);
+    openPrintWindow('Daftar Inventaris Perabot Rumah Staff', body);
+    return;
+  }
   const title = mod.printTitle(row);
   const body = mod.printBody(row, settings);
   openPrintWindow(title, body);
 }
 function openPrintWindow(title, bodyHtml){
+  // Semua dokumen cetak (Ijin, Cuti, SPH, dll) dipaksa muat dalam 1 halaman
+  // A4: kontennya dibungkus #printPage lalu di-scale otomatis (JS) supaya
+  // pas dengan tinggi 1 halaman A4, tanpa memotong isi dan tanpa perlu
+  // menyetel ulang font/spacing di tiap template secara manual.
   const w = window.open('', '_blank', 'width=850,height=1000');
   w.document.write(`<!DOCTYPE html><html><head><title>${esc(title)}</title>
     <meta charset="utf-8">
     <style>
-      body{font-family:'Times New Roman',serif;color:#222;padding:40px 50px;max-width:800px;margin:0 auto;}
+      /* @page margin sengaja 0 — semua "margin kertas" diatur lewat padding
+         #printPage supaya ukuran yang diukur oleh script (scrollHeight) sama
+         persis dengan yang benar-benar tercetak, jadi hasil scale akurat. */
+      @page{ size:A4; margin:0; }
+      html,body{margin:0;padding:0;background:#e9e9e9;}
+      body{font-family:'Times New Roman',serif;color:#222;}
       table{border-collapse:collapse;}
-      @media print{ body{padding:15mm 18mm;} }
-    </style></head><body>${bodyHtml}
-    <script>window.onload=()=>{setTimeout(()=>window.print(),300);}<\/script>
+      #printPage{
+        background:#fff;
+        width:210mm;
+        min-height:297mm;
+        margin:10px auto;
+        padding:15mm 18mm;
+        box-sizing:border-box;
+        transform-origin:top left;
+      }
+      @media print{
+        html,body{background:#fff;}
+        #printPage{margin:0;box-shadow:none;}
+      }
+    </style></head><body>
+    <div id="printPage">${bodyHtml}</div>
+    <script>
+      // Paksa muat 1 halaman A4: kalau tinggi konten melebihi tinggi A4,
+      // seluruh halaman di-scale-down (bukan dipotong) supaya tetap 1 lembar.
+      function fitToOnePage(){
+        var page = document.getElementById('printPage');
+        var pageHeightPx = 297 * 96/25.4; // tinggi A4 penuh dalam px (margin sudah 0 di @page)
+        var contentHeight = page.scrollHeight;
+        if(contentHeight > pageHeightPx){
+          var scale = pageHeightPx / contentHeight;
+          page.style.transform = 'scale(' + scale + ')';
+          page.style.width = (100/scale) + '%';
+          page.style.minHeight = '0';
+        }
+      }
+      window.onload = () => { fitToOnePage(); setTimeout(()=>window.print(), 300); };
+    <\/script>
     </body></html>`);
   w.document.close();
 }
@@ -1455,7 +1959,7 @@ async function renderKaryawanPage(){
 }
 async function renderAbsensiPage(){
   const aw = await getAbsensiWarningsData();
-  const banner = warningBannerHtml(aw.data, ['NIK','Nama Karyawan','Departemen / Afdeling','Total Mangkir (M)','Mangkir Berturut-turut Terbanyak','Rekomendasi'],
+  const banner = warningBannerHtml(aw.data, ['NIK','Nama Karyawan','Jabatan','Total Mangkir (M)','Mangkir Berturut-turut Terbanyak','Rekomendasi'],
     'Tidak ada karyawan dengan indikasi mangkir berlebih saat ini.',
     'Perlu Surat Peringatan — Mangkir 3x Berturut-turut atau Total ≥ 8 Hari');
   await renderModulePage('absensi', banner);
@@ -1478,7 +1982,11 @@ async function renderMPPPage(){
 // ══════════════════════════════════════════════════
 //  MASTER UPLOAD
 // ══════════════════════════════════════════════════
-const COLS_HINT_ABSENSI = ['Tanggal','NIK','Nama Karyawan','Departemen / Afdeling','Status','Keterangan'];
+const COLS_HINT_ABSENSI = ['NIK','Nama Karyawan','Status','Jabatan',
+  'HKE','HB','HBK','KB','S1','S2','S3','S4','P2','CT','CH','DL','TP',
+  'TOTAL HKNE','HMK','HM','M','TK','P1','PGH','LGH','TOTAL',
+  '26','27','28','29','30','1','2','3','4','5','6','7','8','9','10',
+  '11','12','13','14','15','16','17','18','19','20','21','22','23','24','25'];
 const COLS_HINT_KARYAWAN = ['NIK','Nama','Jenis Kelamin','Jabatan','Departemen / Afdeling','Status Karyawan','Golongan','Tanggal Masuk','No Kontrak','Tanggal Akhir Kontrak','Pendidikan Terakhir','No HP','Status Aktif'];
 const COLS_HINT_CUTI = ['NIK','Nama','Jabatan','Status Karyawan','Tanggal Masuk Kerja','Jenis Cuti','Sisa Cuti Tahun Sebelumnya','Cuti Yang Telah Diambil Tahun Ini','Tanggal Cuti Dari','Tanggal Cuti Sampai','Jumlah Hari Diminta','Disetujui Oleh'];
 const COLS_HINT_REKRUT = ['Nama','NIK','Jabatan','Afdeling','Tiba di Kebun','Biaya Rekrut','Jangka Waktu (Bulan)','Cicilan Per Bulan'];
@@ -1630,26 +2138,36 @@ async function renderDashboard(){
     </div>`;
 
   const palette = ['#6b9080','#7fa6c9','#d7a24a','#d97b6c','#9576cf','#6ea88a'];
+  // Tema glass pakai kartu kaca gelap — chart perlu foreColor terang &
+  // gridline tipis supaya "wallpaper" chart tetap mulus & judul/label kebaca.
+  const isGlass = document.body.classList.contains('theme-glass');
+  const chartTheme = isGlass
+    ? { mode:'dark', palette:'palette1' }
+    : { mode:'light' };
+  const chartBase = isGlass
+    ? { foreColor:'#fff', background:'transparent' }
+    : {};
+  const gridBase = isGlass ? { borderColor:'rgba(255,255,255,.15)' } : {};
 
   const chTrend = new ApexCharts(document.getElementById('chTrend'), {
-    chart:{type:'bar',height:260,toolbar:{show:false}}, colors:['#7fa6c9','#6b9080'],
+    chart:{type:'bar',height:260,toolbar:{show:false},...chartBase}, colors:['#7fa6c9','#6b9080'], theme:chartTheme, grid:gridBase,
     series:[{name:'Masuk',data:ch.trend.masuk},{name:'Keluar',data:ch.trend.keluar}],
     xaxis:{categories:ch.trend.months}, plotOptions:{bar:{borderRadius:4,columnWidth:'50%'}}, legend:{position:'top'}
   }); chTrend.render(); charts.push(chTrend);
 
   const chSPH = new ApexCharts(document.getElementById('chSPH'), {
-    chart:{type:'donut',height:260}, colors:palette,
+    chart:{type:'donut',height:260,...chartBase}, colors:palette, theme:chartTheme,
     series:Object.values(ch.sphStatus), labels:Object.keys(ch.sphStatus)
   }); chSPH.render(); charts.push(chSPH);
 
   const chAssetKat = new ApexCharts(document.getElementById('chAssetKat'), {
-    chart:{type:'bar',height:260,toolbar:{show:false}}, colors:['#6b9080'],
+    chart:{type:'bar',height:260,toolbar:{show:false},...chartBase}, colors:['#6b9080'], theme:chartTheme, grid:gridBase,
     series:[{name:'Jumlah',data:Object.values(ch.assetKategori)}],
     xaxis:{categories:Object.keys(ch.assetKategori)}, plotOptions:{bar:{borderRadius:4,horizontal:true}}
   }); chAssetKat.render(); charts.push(chAssetKat);
 
   const chAssetKond = new ApexCharts(document.getElementById('chAssetKond'), {
-    chart:{type:'pie',height:260}, colors:['#6ea88a','#d7a24a','#d97b6c'],
+    chart:{type:'pie',height:260,...chartBase}, colors:['#6ea88a','#d7a24a','#d97b6c'], theme:chartTheme,
     series:Object.values(ch.assetKondisi), labels:Object.keys(ch.assetKondisi)
   }); chAssetKond.render(); charts.push(chAssetKond);
 }
@@ -1679,11 +2197,24 @@ async function renderReportsPage(){
       </div>
       <div id="rptSummary" class="kpi-grid" style="margin-bottom:14px;"></div>
       <div class="tw"><table id="rptTable"><thead><tr id="rptHead"></tr></thead><tbody id="rptBody"></tbody></table></div>
+      <div class="pgn" id="rptPgn"></div>
     </div>`;
   await runReport();
 }
 const DATE_FIELD_MAP = { surat:'Tanggal', sph:'Tanggal', suratDinas:'Tanggal', asset:'Tgl Update' };
 let _lastReport = null;
+let _rptPage = 1;
+function renderReportTablePage(mod, data){
+  document.getElementById('rptHead').innerHTML = mod.listColumns.map(c=>`<th>${esc(c)}</th>`).join('');
+  if(!data.length){
+    document.getElementById('rptBody').innerHTML = `<tr class="empty-row"><td colspan="${mod.listColumns.length}">Tidak ada data pada rentang ini.</td></tr>`;
+    document.getElementById('rptPgn').innerHTML=''; return;
+  }
+  const start = (_rptPage-1)*PAGE_SIZE;
+  const pageRows = data.slice(start, start+PAGE_SIZE);
+  document.getElementById('rptBody').innerHTML = pageRows.map(r=>`<tr>${mod.listColumns.map(c=>`<td>${mod.renderCell(c,r)}</td>`).join('')}</tr>`).join('');
+  renderPaginationHtml('rptPgn', data.length, _rptPage, PAGE_SIZE, (p)=>{ _rptPage=p; renderReportTablePage(mod, data); });
+}
 async function runReport(){
   const key = document.getElementById('rptModule').value;
   const from = document.getElementById('rptFrom').value;
@@ -1694,10 +2225,8 @@ async function runReport(){
   if(from) data = data.filter(r=> String(r[dateField]||'') >= from);
   if(to)   data = data.filter(r=> String(r[dateField]||'') <= to);
   _lastReport = { key, mod, data };
-
-  document.getElementById('rptHead').innerHTML = mod.listColumns.map(c=>`<th>${esc(c)}</th>`).join('');
-  document.getElementById('rptBody').innerHTML = data.length ? data.map(r=>`<tr>${mod.listColumns.map(c=>`<td>${mod.renderCell(c,r)}</td>`).join('')}</tr>`).join('')
-    : `<tr class="empty-row"><td colspan="${mod.listColumns.length}">Tidak ada data pada rentang ini.</td></tr>`;
+  _rptPage = 1;
+  renderReportTablePage(mod, data);
 
   const summary = document.getElementById('rptSummary');
   summary.innerHTML = `
@@ -1779,6 +2308,9 @@ function applyTheme(theme){
   localStorage.setItem('hrpgaTheme', theme);
   document.body.classList.toggle('theme-glass', theme==='glass');
   toast('Tema tampilan diubah ke "'+(theme==='glass'?'Glass':'Default')+'".');
+  // Re-render halaman aktif supaya chart (mis. Dashboard) ikut ganti warna
+  // foreColor/gridline sesuai tema baru, bukan cuma kartunya saja.
+  if(CP==='dashboard') renderDashboard();
 }
 async function renderSettingsProfil(el){
   const s = await getSettingsData();
