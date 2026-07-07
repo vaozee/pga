@@ -341,6 +341,7 @@ tbody td{padding:11px 12px;font-size:.82rem;color:var(--tx);white-space:nowrap;}
         <input type="file" accept="application/json" style="display:none;" onchange="importOfflineFileAtLogin(this)">
       </label>
     </div>
+    <div class="lc-foot" style="margin-top:10px;opacity:.7;">created by Achmad Fauzi &copy;2026 &middot; Email: vaozeei@gmail.com</div>
   </div>
 </div>
 
@@ -361,6 +362,7 @@ tbody td{padding:11px 12px;font-size:.82rem;color:var(--tx);white-space:nowrap;}
       <div class="ni" data-p="absensi"><i class="fas fa-calendar-check"></i><span>Monitoring Absensi</span></div>
       <div class="ni" data-p="cuti"><i class="fas fa-umbrella-beach"></i><span>Monitoring Cuti</span></div>
       <div class="ni" data-p="mpp"><i class="fas fa-users-gear"></i><span>Monitoring MPP</span></div>
+      <div class="ni" data-p="mppgrid"><i class="fas fa-table-list"></i><span>MPP Rekap (Data Lama)</span></div>
       <div class="ni" data-p="mop"><i class="fas fa-motorcycle"></i><span>Monitoring MOP</span></div>
       <div class="nav-sep">Asset</div>
       <div class="ni" data-p="furniture"><i class="fas fa-chair"></i><span>Asset Furniture</span></div>
@@ -506,6 +508,7 @@ const DEMO_UNIT = [
 //  API LAYER
 // ══════════════════════════════════════════════════
 const NON_QUEUEABLE_ACTIONS = ['login','logout']; // aksi ini TIDAK dimasukkan ke antrian offline
+
 async function api(action, params={}){
   if(!USE_BACKEND) return null;
   const url = new URL(BACKEND_URL);
@@ -587,7 +590,7 @@ async function syncAllDataNow(btn){
   if(!USE_BACKEND){ toast('Backend URL belum diatur.', true); return; }
   if(btn){ btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Menyinkronkan...'; }
   invalidateCache();
-  const getters = [getSuratData,getSPHData,getSuratDinasData,getAssetData,getKaryawanData,getAbsensiData,getCutiData,getMPPData,getFurnitureData,getBangunanData,getUnitData,getUsersData,getDimensionsData,getSettingsData];
+  const getters = [getSuratData,getSPHData,getSuratDinasData,getAssetData,getKaryawanData,getAbsensiData,getCutiData,getMPPData,getMPPGridData,getFurnitureData,getBangunanData,getUnitData,getUsersData,getDimensionsData,getSettingsData];
   for(const fn of getters){ try{ await fn(); }catch(e){ console.warn(e); } }
   persistCacheToLocal();
   if(btn){ btn.disabled=false; btn.innerHTML='<i class="fas fa-cloud-arrow-down"></i> Sinkronkan Semua Data'; }
@@ -729,7 +732,7 @@ async function renderSyncPage(){
 // ══════════════════════════════════════════════════
 let CU = null, CP = 'dashboard', charts = [], modalSaveCb = null;
 let _cache = { surat:null, sph:null, sphAngsuran:null, suratDinas:null, asset:null, users:null, dimensions:null, settings:null,
-  karyawan:null, absensi:null, cuti:null, mpp:null, mop:null, furniture:null, bangunan:null, unit:null };
+  karyawan:null, absensi:null, cuti:null, mpp:null, mop:null, furniture:null, bangunan:null, unit:null, mppgrid:null };
 function invalidateCache(...keys){
   if(keys.length===0) Object.keys(_cache).forEach(k=>_cache[k]=null);
   else keys.forEach(k=>_cache[k]=null);
@@ -763,6 +766,7 @@ async function getMopData(){ return getData('mop','getMOP',DEMO_MOP); }
 async function getFurnitureData(){ return getData('furniture','getFurniture',DEMO_FURNITURE); }
 async function getBangunanData(){ return getData('bangunan','getBangunan',DEMO_BANGUNAN); }
 async function getUnitData(){ return getData('unit','getUnit',DEMO_UNIT); }
+async function getMPPGridData(){ return getData('mppgrid','getMPPGrid',[]); }
 async function getUsersData(){ return getData('users','getUsers',DEMO_USERS); }
 
 // ── Monitoring (server-computed jika ada backend, dihitung ulang di demo) ──
@@ -991,6 +995,7 @@ async function goto(page){
   else if(page==='absensi') await renderAbsensiPage();
   else if(page==='cuti') await renderCutiPage();
   else if(page==='mpp') await renderMPPPage();
+  else if(page==='mppgrid') await renderModulePage('mppgrid');
   else if(page==='mop') await renderModulePage('mop');
   else if(page==='furniture') await renderModulePage('furniture');
   else if(page==='bangunan') await renderModulePage('bangunan');
@@ -1070,14 +1075,22 @@ const MODULES = {
       {key:'Tanggal', label:'Tanggal', type:'date', required:true},
       {key:'Jenis', label:'Jenis', type:'select', options:['Surat Dinas','Ijin Keluar Kebun'], required:true},
       {key:'Nama Karyawan', label:'Nama Karyawan', type:'text', required:true},
-      {key:'NIK', label:'NIK', type:'text'},
+      {key:'NIK', label:'NIK / NPK', type:'text'},
+      {key:'Golongan', label:'Golongan', type:'text', ph:'mis. Staff'},
       {key:'Jabatan', label:'Jabatan', type:'text'},
       {key:'Departemen / Afdeling', label:'Departemen / Afdeling', type:'select', options:()=>dimOptions('Departemen'), required:true},
+      {key:'Pengikut', label:'Pengikut', type:'text', full:true, ph:'Nama pengikut perjalanan dinas (jika ada)'},
       {key:'Tujuan', label:'Tujuan', type:'text', full:true, required:true},
       {key:'Keperluan', label:'Keperluan', type:'textarea', full:true},
       {key:'Tanggal Berangkat', label:'Tanggal Berangkat', type:'date'},
       {key:'Tanggal Kembali', label:'Tanggal Kembali', type:'date'},
-      {key:'Kendaraan', label:'Kendaraan', type:'text'},
+      {key:'Tanggal Tiba', label:'Tanggal Tiba (Realisasi)', type:'date'},
+      {key:'Transportasi', label:'Fasilitas Transportasi', type:'select', options:['Pesawat Udara','Bus','Mobil','Speed Boat']},
+      {key:'Kendaraan', label:'Kendaraan / Detail Transportasi', type:'text'},
+      {key:'Penginapan', label:'Fasilitas Penginapan', type:'select', options:['Ada','Tidak Ada']},
+      {key:'Biaya Makan', label:'Fasilitas Biaya Makan', type:'select', options:['Ada','Tidak Ada']},
+      {key:'Uang Saku', label:'Fasilitas Uang Saku', type:'select', options:['Ada','Tidak Ada']},
+      {key:'Uang Muka', label:'Fasilitas Uang Muka', type:'select', options:['Ada','Tidak Ada']},
       {key:'Disetujui Oleh', label:'Disetujui Oleh', type:'text'},
       {key:'Status', label:'Status', type:'select', options:['Menunggu Persetujuan','Disetujui','Ditolak','Selesai']},
       {key:'Catatan', label:'Catatan', type:'textarea', full:true}
@@ -1150,7 +1163,7 @@ const MODULES = {
       if(col==='Tanggal Masuk') return fmtDate(row[col]);
       return esc(row[col]);
     },
-    printTitle:()=> 'Data Karyawan', printBody:(row,s)=>printKaryawanBody(row,s)
+    printTitle:()=> 'Formulir Evaluasi Kinerja Karyawan Kontrak / Percobaan', printBody:(row,s)=>printKaryawanBody(row,s)
   },
   absensi: {
     label:'Monitoring Absensi', icon:'fa-calendar-check', apiName:'Absensi', idField:'ID', idPrefix:'ABS-',
@@ -1218,13 +1231,32 @@ const MODULES = {
       {key:'Existing (Saat Ini)', label:'Existing (Saat Ini)', type:'number', required:true},
       {key:'Bulan Rencana Pemenuhan', label:'Bulan Rencana Pemenuhan', type:'select', options:()=>dimOptions('Bulan Rencana')},
       {key:'Jumlah Rencana Pemenuhan', label:'Jumlah Rencana Pemenuhan', type:'number'},
-      {key:'Catatan', label:'Catatan', type:'textarea', full:true}
+      {key:'Catatan', label:'Catatan', type:'textarea', full:true},
+      // ── Field tambahan untuk cetak FPTK (Formulir Permintaan Tenaga Kerja) ──
+      {key:'No FPTK', label:'No. FPTK (cetak)', type:'text', ph:'Otomatis jika kosong'},
+      {key:'Tanggal Permintaan', label:'Tgl. Permintaan (cetak)', type:'date'},
+      {key:'Tanggal Dibutuhkan', label:'Tgl. Dibutuhkan (cetak)', type:'date'},
+      {key:'Perusahaan / Lokasi', label:'Perusahaan / Lokasi (cetak)', type:'text'},
+      {key:'Status Karyawan', label:'Status Karyawan (cetak)', type:'select', options:['Tetap','Kontrak','Magang']},
+      {key:'Pangkat', label:'Pangkat (cetak)', type:'select', options:['Worker','Supervisi/Clerk/Senior Clerk','Assistant/Senior Assistant','Supervisor','Manager/Senior Manager','Lainnya']},
+      {key:'Alasan Permintaan', label:'Alasan Permintaan (cetak)', type:'select', options:['Replacement','Penambahan sesuai MPP','Penambahan di luar MPP']},
+      {key:'Penjelasan Alasan', label:'Penjelasan Alasan (cetak)', type:'textarea', full:true, ph:'Apabila replacement, sebutkan nama karyawan yang diganti'},
+      {key:'Jenis Kelamin', label:'Jenis Kelamin Dibutuhkan (cetak)', type:'select', options:['Laki-Laki','Perempuan']},
+      {key:'Pendidikan Terakhir', label:'Pendidikan Terakhir (cetak)', type:'select', options:['SLTA/D1/D2','D3','S1']},
+      {key:'Jurusan', label:'Jurusan (cetak)', type:'text'},
+      {key:'Usia', label:'Usia (cetak, tahun)', type:'number'},
+      {key:'Pengalaman Kerja', label:'Pengalaman Kerja (cetak, tahun)', type:'number'},
+      {key:'Syarat Keterampilan', label:'Syarat / Keterampilan Khusus (cetak)', type:'textarea', full:true},
+      {key:'Ada Calon', label:'Apakah Ada Calon Disarankan (cetak)', type:'select', options:['Ya','Tidak']},
+      {key:'Penjelasan Calon', label:'Penjelasan Calon (cetak)', type:'textarea', full:true}
     ],
     listColumns:['Departemen / Afdeling','Jabatan','Kebutuhan (Standar)','Existing (Saat Ini)','Kekurangan / Kelebihan','Bulan Rencana Pemenuhan','Jumlah Rencana Pemenuhan'],
     renderCell:(col,row)=>{
       if(col==='Kekurangan / Kelebihan'){ const g=Number(row[col]||(Number(row['Kebutuhan (Standar)']||0)-Number(row['Existing (Saat Ini)']||0))); return g>0?badge(g,'by'):(g<0?badge(g,'bb'):badge('0','bg')); }
       return esc(row[col]);
-    }
+    },
+    printTitle:()=> 'Formulir Permintaan Tenaga Kerja (FPTK)',
+    printBody:(row,s)=> printFPTKBody(row,s)
   }
 };
 // ── Monitoring MOP (header: No, NIK, User, Jabatan, MOP Ke, Type Motor, ... ) ──
@@ -1355,6 +1387,45 @@ MODULES.unit = {
     return esc(row[col]);
   },
   printTitle:()=> 'Kartu Asset Unit', printBody:(row,s)=>printUnitBody(row,s)
+};
+
+// ── MPP Rekap (Data Lama) — hasil import backup offline lama, format grid
+// kebutuhan per jabatan (beda dari "Monitoring MPP" / form FPTK yang dipakai
+// sekarang). Ditaruh terpisah supaya data lama tetap bisa dilihat/diedit
+// tanpa mencampur skema dengan MPP versi baru. ──
+MODULES.mppgrid = {
+  label:'MPP Rekap (Data Lama)', icon:'fa-table-list', apiName:'MPPGrid', idField:null, idPrefix:'',
+  getData:getMPPGridData, cacheKey:'mppgrid',
+  fields:[
+    {key:'DEPARTEMENT', label:'Departemen', type:'text', required:true},
+    {key:'KODE JABATAN', label:'Kode Jabatan', type:'text'},
+    {key:'NAMA JABATAN', label:'Nama Jabatan', type:'text', required:true, full:true},
+    {key:'GRADE', label:'Grade', type:'text'},
+    {key:'RASIO (HK/HA)', label:'Rasio (HK/HA)', type:'text'},
+    {key:'KEBUTUHAN 2026', label:'Kebutuhan 2026', type:'number'},
+    {key:'TERSEDIA      SD OKT 2025', label:'Tersedia s.d. Okt 2025', type:'number'},
+    {key:'OUTLOOK    NOP SD DES', label:'Outlook Nop s.d. Des', type:'number'},
+    {key:'KEKURANGAN 2025', label:'Kekurangan 2025', type:'number'},
+    {key:'KEBT STAFF', label:'Kebutuhan Staff', type:'number'},
+    {key:'KEBT SKUB', label:'Kebutuhan SKUB', type:'number'},
+    {key:'KEBT SKUH', label:'Kebutuhan SKUH', type:'number'},
+    {key:'KEBT PHL', label:'Kebutuhan PHL', type:'number'},
+    {key:'KEBT PWT', label:'Kebutuhan PWT', type:'number'},
+    {key:'TERSEDIA STAFF', label:'Tersedia Staff', type:'number'},
+    {key:'TERSEDIA SKUB', label:'Tersedia SKUB', type:'number'},
+    {key:'TERSEDIA SKUH', label:'Tersedia SKUH', type:'number'},
+    {key:'TERSEDIA PHL', label:'Tersedia PHL', type:'number'},
+    {key:'TERSEDIA PWT', label:'Tersedia PWT', type:'number'},
+    {key:'JAN', label:'Jan', type:'text'}, {key:'FEB', label:'Feb', type:'text'},
+    {key:'MAR', label:'Mar', type:'text'}, {key:'APR', label:'Apr', type:'text'},
+    {key:'MAY', label:'Mei', type:'text'}, {key:'JUN', label:'Jun', type:'text'},
+    {key:'JUL', label:'Jul', type:'text'}, {key:'AUG', label:'Agu', type:'text'},
+    {key:'SEP', label:'Sep', type:'text'}, {key:'OCT', label:'Okt', type:'text'},
+    {key:'NOV', label:'Nov', type:'text'}, {key:'DEC', label:'Des', type:'text'}
+  ],
+  listColumns:['DEPARTEMENT','KODE JABATAN','NAMA JABATAN','GRADE','KEBUTUHAN 2026','TERSEDIA STAFF','KEKURANGAN 2025'],
+  renderCell:(col,row)=> esc(row[col]),
+  printTitle:()=> 'MPP Rekap (Data Lama)', printBody:(row,s)=>printMPPGridBody(row,s)
 };
 
 let _moduleFilter = { search:'', type:'Semua', page:1 };
@@ -1661,25 +1732,153 @@ function printSuratDinasBody(row, s){
       </tr>
     </table>`;
   }
+  // Mengikuti persis format "Surat Perjalanan Dinas" (Form_SPD_PSAM): kotak
+  // fasilitas (Transportasi/Penginapan/Biaya Makan/Uang Saku/Uang Muka) ditandai
+  // [X] sesuai pilihan pada data, 4 kolom tanda tangan (Pemohon/Asst PGA/KTU/GM),
+  // lalu kotak realisasi (Tanggal Tiba/Kembali/Catatan) + Mengetahui Dept/Div Head.
+  const mark = (val, opt) => (String(val||'')===opt) ? '[X]' : '[&nbsp;&nbsp;]';
+  const markYN = (val, yes) => (String(val||'')===(yes?'Ada':'Tidak Ada')) ? '[X]' : '[&nbsp;&nbsp;]';
+  const fasilitasRow = (label, val) => `
+    <tr>
+      <td style="padding:3px 0;width:150px;">${esc(label)}</td>
+      <td style="padding:3px 0;width:20px;">${markYN(val,true)}</td><td style="padding:3px 0;">Ada</td>
+      <td style="padding:3px 0;width:20px;">${markYN(val,false)}</td><td style="padding:3px 0;">Tidak Ada</td>
+    </tr>`;
   return `
   ${letterheadHtml(s)}
-  <h3 style="text-align:center;text-decoration:underline;margin-bottom:4px;">SURAT TUGAS / SURAT DINAS</h3>
-  <p style="font-size:.88rem;margin-top:10px;">Nomor: ${esc(row['No Surat'])}</p>
-  <p style="font-size:.88rem;margin-top:10px;">Yang bertanda tangan di bawah ini memberikan tugas dinas kepada:</p>
+  <h3 style="text-align:center;text-decoration:underline;margin-bottom:2px;">SURAT PERJALANAN DINAS</h3>
+  <p style="text-align:center;font-size:.85rem;margin-bottom:16px;">Nomor: ${esc(row['No Surat'])}</p>
+  <p style="font-size:.88rem;">Surat Perjalanan Dinas ini diberikan kepada :</p>
   <table style="width:100%;font-size:.88rem;margin-top:8px;">
     <tr><td style="width:180px;padding:3px 0;">Nama</td><td>: ${esc(row['Nama Karyawan'])}</td></tr>
-    <tr><td style="padding:3px 0;">NIK</td><td>: ${esc(row['NIK']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Golongan</td><td>: ${esc(row['Golongan']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">NPK</td><td>: ${esc(row['NIK']||'-')}</td></tr>
     <tr><td style="padding:3px 0;">Jabatan</td><td>: ${esc(row['Jabatan']||'-')}</td></tr>
-    <tr><td style="padding:3px 0;">Departemen / Afdeling</td><td>: ${esc(row['Departemen / Afdeling']||'-')}</td></tr>
-    <tr><td style="padding:3px 0;">Tujuan</td><td>: ${esc(row['Tujuan'])}</td></tr>
-    <tr><td style="padding:3px 0;vertical-align:top;">Keperluan</td><td>: ${esc(row['Keperluan']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Divisi/Depart./Cabang</td><td>: ${esc(row['Departemen / Afdeling']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Pengikut</td><td>: ${esc(row['Pengikut']||'-')}</td></tr>
+  </table>
+  <p style="font-size:.88rem;margin-top:12px;">Untuk melakukan tugas kedinasan :</p>
+  <table style="width:100%;font-size:.88rem;margin-top:8px;">
+    <tr><td style="width:180px;padding:3px 0;">Tempat/Tujuan</td><td>: ${esc(row['Tujuan']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;vertical-align:top;">Keperluan/Tugas</td><td>: ${esc(row['Keperluan']||'-')}</td></tr>
     <tr><td style="padding:3px 0;">Tanggal Berangkat</td><td>: ${fmtDate(row['Tanggal Berangkat'])}</td></tr>
     <tr><td style="padding:3px 0;">Tanggal Kembali</td><td>: ${fmtDate(row['Tanggal Kembali'])}</td></tr>
-    <tr><td style="padding:3px 0;">Kendaraan</td><td>: ${esc(row['Kendaraan']||'-')}</td></tr>
-    <tr><td style="padding:3px 0;">Status</td><td>: ${esc(row['Status'])}</td></tr>
   </table>
-  <p style="font-size:.88rem;margin-top:12px;">Demikian surat ini dibuat untuk dipergunakan sebagaimana mestinya.</p>
-  ${signBlockHtml(s, 'Pemohon', 'Menyetujui, HR & PGA', row['Disetujui Oleh']||s.DirectorName)}`;
+  <table style="width:100%;font-size:.88rem;margin-top:12px;">
+    <tr><td style="padding:3px 0;width:150px;">Fasilitas</td><td style="padding:3px 0;" colspan="4">1. Transportasi</td></tr>
+    <tr>
+      <td></td>
+      <td style="padding:3px 0;width:20px;">${mark(row['Transportasi'],'Pesawat Udara')}</td><td style="padding:3px 0;">Pesawat Udara</td>
+      <td style="padding:3px 0;width:20px;">${mark(row['Transportasi'],'Bus')}</td><td style="padding:3px 0;">Bus</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td style="padding:3px 0;width:20px;">${mark(row['Transportasi'],'Mobil')}</td><td style="padding:3px 0;">Mobil</td>
+      <td style="padding:3px 0;width:20px;">${mark(row['Transportasi'],'Speed Boat')}</td><td style="padding:3px 0;">Speed Boat</td>
+    </tr>
+    ${fasilitasRow('2. Penginapan', row['Penginapan'])}
+    ${fasilitasRow('3. Biaya Makan', row['Biaya Makan'])}
+    ${fasilitasRow('4. Uang Saku', row['Uang Saku'])}
+    ${fasilitasRow('5. Uang Muka', row['Uang Muka'])}
+  </table>
+  <p style="font-size:.85rem;margin-top:10px;">Kepada karyawan yang bersangkutan agar melaksanakan tugas yang diberikan secara bertanggung-jawab.</p>
+  <table style="width:100%;font-size:.82rem;margin-top:16px;text-align:center;border-collapse:collapse;" border="1" cellpadding="6">
+    <tr><td>Dibuat Oleh :</td><td>Diperiksa Oleh :</td><td>Mengetahui :</td><td>Disetujui :</td></tr>
+    <tr>
+      <td style="height:60px;vertical-align:bottom;"><b>${esc(row['Nama Karyawan'])}</b></td>
+      <td style="height:60px;"></td>
+      <td style="height:60px;"></td>
+      <td style="height:60px;vertical-align:bottom;"><b>${esc(row['Disetujui Oleh']||s.DirectorName||'')}</b></td>
+    </tr>
+    <tr><td>Pemohon</td><td>Asst PGA</td><td>KTU</td><td>GM</td></tr>
+  </table>
+  <table style="width:100%;font-size:.85rem;margin-top:20px;border-collapse:collapse;" border="1" cellpadding="8">
+    <tr><td style="width:65%;vertical-align:top;">
+      <p>Tanggal Tiba &nbsp;&nbsp;: ${fmtDate(row['Tanggal Tiba'])}</p>
+      <p>Tanggal Kembali : ${fmtDate(row['Tanggal Kembali'])}</p>
+      <p>Catatan &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ${esc(row['Catatan']||'-')}</p>
+    </td>
+    <td style="width:35%;text-align:center;vertical-align:top;">
+      <div>Mengetahui :</div>
+      <div style="height:55px;"></div>
+      <div style="border-top:1px solid #33414a;padding-top:4px;">Dept.Head/Div. Head</div>
+    </td></tr>
+  </table>`;
+}
+// Cetak "Formulir Permintaan Tenaga Kerja" (FPTK) — mengikuti persis layout
+// Form_FPTK_New_2025: kotak identitas kiri/kanan, checkbox Status Karyawan /
+// Pangkat / Alasan Permintaan, blok Kualifikasi Jabatan, lalu 3 kolom
+// Mengajukan/Memeriksa/Menyetujui (disederhanakan jadi kolom yang relevan
+// dengan data yang tersedia di aplikasi ini).
+function printFPTKBody(row, s){
+  const mark = (val, opt) => (String(val||'')===opt) ? '[X]' : '[&nbsp;&nbsp;]';
+  const kebutuhan = Number(row['Kebutuhan (Standar)']||0);
+  const existing = Number(row['Existing (Saat Ini)']||0);
+  const kekurangan = kebutuhan - existing;
+  const noFPTK = row['No FPTK'] || ('FPTK-' + String(row._row||'').padStart(4,'0'));
+  return `
+  ${letterheadHtml(s)}
+  <h3 style="text-align:center;margin-bottom:14px;">FORMULIR PERMINTAAN TENAGA KERJA</h3>
+  <table style="width:100%;font-size:.82rem;border-collapse:collapse;" border="1" cellpadding="5">
+    <tr>
+      <td style="width:25%;">No. FPTK</td><td style="width:25%;">: ${esc(noFPTK)}</td>
+      <td style="width:25%;">Tgl. Permintaan</td><td style="width:25%;">: ${fmtDate(row['Tanggal Permintaan'])}</td>
+    </tr>
+    <tr>
+      <td>Jabatan yang dibutuhkan</td><td>: ${esc(row['Jabatan']||'-')}</td>
+      <td>Tgl. Dibutuhkan</td><td>: ${fmtDate(row['Tanggal Dibutuhkan'])}</td>
+    </tr>
+    <tr>
+      <td>Dept./Sub Div./Div.</td><td>: ${esc(row['Departemen / Afdeling']||'-')}</td>
+      <td>MPP</td><td>: ${kebutuhan} orang</td>
+    </tr>
+    <tr>
+      <td>Perusahaan/lokasi</td><td>: ${esc(row['Perusahaan / Lokasi']||s.CompanyName||'-')}</td>
+      <td>Jumlah saat ini</td><td>: ${existing} orang</td>
+    </tr>
+    <tr>
+      <td>Jumlah yg direkrut</td><td>: ${esc(row['Jumlah Rencana Pemenuhan']||0)} orang</td>
+      <td>Kekurangan</td><td>: ${kekurangan} orang</td>
+    </tr>
+  </table>
+  <table style="width:100%;font-size:.82rem;margin-top:6px;">
+    <tr>
+      <td style="width:150px;padding:4px 0;">Status Karyawan</td>
+      <td style="padding:4px 0;">${mark(row['Status Karyawan'],'Tetap')} Tetap &nbsp;&nbsp; ${mark(row['Status Karyawan'],'Kontrak')} Kontrak &nbsp;&nbsp; ${mark(row['Status Karyawan'],'Magang')} Magang</td>
+    </tr>
+    <tr>
+      <td style="padding:4px 0;vertical-align:top;">Pangkat</td>
+      <td style="padding:4px 0;">
+        ${mark(row['Pangkat'],'Worker')} Worker &nbsp;&nbsp; ${mark(row['Pangkat'],'Supervisi/Clerk/Senior Clerk')} Supervisi/Clerk/Senior Clerk &nbsp;&nbsp; ${mark(row['Pangkat'],'Assistant/Senior Assistant')} Assistant/Senior Assistant<br>
+        ${mark(row['Pangkat'],'Supervisor')} Supervisor &nbsp;&nbsp; ${mark(row['Pangkat'],'Manager/Senior Manager')} Manager/Senior Manager &nbsp;&nbsp; ${mark(row['Pangkat'],'Lainnya')} Lainnya
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:4px 0;">Alasan Permintaan</td>
+      <td style="padding:4px 0;">${mark(row['Alasan Permintaan'],'Replacement')} Replacement &nbsp;&nbsp; ${mark(row['Alasan Permintaan'],'Penambahan sesuai MPP')} Penambahan sesuai MPP &nbsp;&nbsp; ${mark(row['Alasan Permintaan'],'Penambahan di luar MPP')} Penambahan di luar MPP</td>
+    </tr>
+  </table>
+  <p style="font-size:.82rem;margin-top:6px;">Penjelasan (apabila replacement sebutkan juga nama karyawan yang diganti):</p>
+  <div style="border:1px solid #33414a;min-height:36px;font-size:.82rem;padding:5px;margin-bottom:8px;">${esc(row['Penjelasan Alasan']||'-')}</div>
+  <p style="font-size:.85rem;font-weight:700;margin-top:10px;margin-bottom:4px;">Kualifikasi Jabatan</p>
+  <table style="width:100%;font-size:.82rem;">
+    <tr><td style="width:180px;padding:2px 0;">Jenis Kelamin</td><td style="padding:2px 0;">: ${mark(row['Jenis Kelamin'],'Laki-Laki')} Laki-Laki &nbsp;&nbsp; ${mark(row['Jenis Kelamin'],'Perempuan')} Perempuan</td></tr>
+    <tr><td style="padding:2px 0;">Pendidikan Terakhir</td><td style="padding:2px 0;">: ${mark(row['Pendidikan Terakhir'],'SLTA/D1/D2')} SLTA/D1/D2 &nbsp;&nbsp; ${mark(row['Pendidikan Terakhir'],'D3')} D3 &nbsp;&nbsp; ${mark(row['Pendidikan Terakhir'],'S1')} S1</td></tr>
+    <tr><td style="padding:2px 0;">Jurusan</td><td style="padding:2px 0;">: ${esc(row['Jurusan']||'-')}</td></tr>
+    <tr><td style="padding:2px 0;">Usia</td><td style="padding:2px 0;">: ${esc(row['Usia']||'-')} tahun</td></tr>
+    <tr><td style="padding:2px 0;">Pengalaman Kerja</td><td style="padding:2px 0;">: ${esc(row['Pengalaman Kerja']||'-')} tahun</td></tr>
+    <tr><td style="padding:2px 0;vertical-align:top;">Syarat/keterampilan khusus</td><td style="padding:2px 0;">: ${esc(row['Syarat Keterampilan']||'-')}</td></tr>
+  </table>
+  <p style="font-size:.82rem;margin-top:8px;">Apakah ada calon yang disarankan? ${mark(row['Ada Calon'],'Ya')} Ya &nbsp;&nbsp; ${mark(row['Ada Calon'],'Tidak')} Tidak</p>
+  ${row['Ada Calon']==='Ya' ? `<p style="font-size:.82rem;">Apabila Ya, Jelaskan: ${esc(row['Penjelasan Calon']||'-')}</p>` : ''}
+  <table style="width:100%;font-size:.8rem;margin-top:22px;text-align:center;border-collapse:collapse;" border="1" cellpadding="6">
+    <tr><td>Mengajukan,</td><td>Memeriksa,</td><td>Menyetujui,</td></tr>
+    <tr><td style="height:55px;"></td><td style="height:55px;"></td><td style="height:55px;"></td></tr>
+    <tr><td>Dept. Head/GM/AVP</td><td>HR Director</td><td>${esc(s.DirectorTitle||'Direktur Terkait')}</td></tr>
+  </table>
+  <p style="font-size:.75rem;margin-top:10px;color:#555;">
+    Keterangan: Untuk permintaan tenaga magang, tidak perlu diisi pangkatnya. FPTK diajukan sekurang-kurangnya 1 (satu) bulan sebelumnya. Satu lembar FPTK hanya untuk 1 (satu) jenis jabatan.
+  </p>`;
 }
 function printCutiBody(row, s){
   const today = new Date();
@@ -1766,26 +1965,114 @@ function printCutiBody(row, s){
   <p style="font-size:.78rem;margin-top:10px;color:#555;">Status Pengajuan saat ini: <b>${esc(row['Status']||'Menunggu Persetujuan')}</b>${isApproved?(' — Disetujui oleh '+esc(row['Disetujui Oleh']||'-')):''}</p>`;
 }
 function printKaryawanBody(row, s){
+  const aspek = [
+    ['ANALYTICAL THINKING','Kemampuan mengenali / mengidentifikasikan suatu hubungan sebab akibat / jikamana, berdasarkan informasi-informasi factual yang diperoleh dari berbagai sumber serta mampu menarik kesimpulan'],
+    ['ACHIEVEMENT ORIENTATION','Upaya menyelesaikan tugas dengan tuntas dan mencapai standar kerja yang terbaik'],
+    ['SELF CONFIDENCE','Keyakinan atas kemampuan diri dan obyektifitas ybs dalam menilai kemampuan tersebut'],
+    ['WILLINGNESS TO LEARN','Kemauan untuk memahami dan menerapkan informasi-informasi baru dalam upaya meningkatkan pengetahuan dan kompetensinya'],
+    ['ADAPTABILITY','Kemampuan menyesuaikan diri dalam menghadapi perubahan (lingkungan, tugas dan budaya) dengan tetap menjaga efektifitas tampilan kerja'],
+    ['TEAM WORK','Mampu menjalin kerjasama dalam kelompok, peka terhadap kebutuhan orang lain dan memberikan kontribusi dalam aktivitas kelompok'],
+    ['INTERPERSONAL SKILL','Memiliki minat dan perhatian terhadap orang lain, mampu menciptakan impresi yang baik dalam situasi sosial, bisa menjalin hubungan dengan berbagai kalangan'],
+    ['COMMUNICATION','Kemampuan menerima dan memberikan informasi secara efektif'],
+    ['LEADERSHIP','Kemampuan mengajak, mempengaruhi dan mendorong ataupun mengembangkan orang lain untuk mendapatkan suatu kesediaan dalam menjalankan tugas guna mencapai tujuan'],
+    ['WORK RESULT','Kemampuan menyelesaikan target kerja yang telah ditetapkan, baik secara kualitas maupun kuantitas']
+  ];
+  const aspekRows = aspek.map((a,i)=>`
+    <tr>
+      <td style="text-align:center;border:1px solid #33414a;padding:4px;">${i+1}</td>
+      <td style="border:1px solid #33414a;padding:4px;font-weight:600;white-space:nowrap;">${esc(a[0])}</td>
+      <td style="border:1px solid #33414a;padding:4px;font-size:.72rem;">${esc(a[1])}</td>
+      <td style="border:1px solid #33414a;padding:4px;width:22px;"></td>
+      <td style="border:1px solid #33414a;padding:4px;width:22px;"></td>
+      <td style="border:1px solid #33414a;padding:4px;width:22px;"></td>
+      <td style="border:1px solid #33414a;padding:4px;width:22px;"></td>
+      <td style="border:1px solid #33414a;padding:4px;"></td>
+    </tr>`).join('');
+
   return `
-  ${letterheadHtml(s)}
-  <h3 style="text-align:center;text-decoration:underline;margin-bottom:14px;">DATA KARYAWAN</h3>
-  <table style="width:100%;font-size:.88rem;">
-    <tr><td style="width:190px;padding:3px 0;">NIK</td><td>: ${esc(row['NIK'])}</td></tr>
-    <tr><td style="padding:3px 0;">Nama</td><td>: ${esc(row['Nama'])}</td></tr>
-    <tr><td style="padding:3px 0;">Jenis Kelamin</td><td>: ${esc(row['Jenis Kelamin']||'-')}</td></tr>
-    <tr><td style="padding:3px 0;">Tempat, Tanggal Lahir</td><td>: ${esc(row['Tempat Lahir']||'-')}, ${fmtDate(row['Tanggal Lahir'])}</td></tr>
-    <tr><td style="padding:3px 0;">Jabatan</td><td>: ${esc(row['Jabatan']||'-')}</td></tr>
-    <tr><td style="padding:3px 0;">Departemen / Afdeling</td><td>: ${esc(row['Departemen / Afdeling']||'-')}</td></tr>
-    <tr><td style="padding:3px 0;">Status Karyawan</td><td>: ${esc(row['Status Karyawan']||'-')}</td></tr>
-    <tr><td style="padding:3px 0;">Golongan</td><td>: ${esc(row['Golongan']||'-')}</td></tr>
-    <tr><td style="padding:3px 0;">Tanggal Masuk</td><td>: ${fmtDate(row['Tanggal Masuk'])}</td></tr>
-    <tr><td style="padding:3px 0;">No Kontrak</td><td>: ${esc(row['No Kontrak']||'-')}</td></tr>
-    <tr><td style="padding:3px 0;">Masa Kontrak</td><td>: ${fmtDate(row['Tanggal Mulai Kontrak'])} s/d ${fmtDate(row['Tanggal Akhir Kontrak'])}</td></tr>
-    <tr><td style="padding:3px 0;">Pendidikan Terakhir</td><td>: ${esc(row['Pendidikan Terakhir']||'-')}</td></tr>
-    <tr><td style="padding:3px 0;">No HP</td><td>: ${esc(row['No HP']||'-')}</td></tr>
-    <tr><td style="padding:3px 0;">Status Aktif</td><td>: ${esc(row['Status Aktif']||'-')}</td></tr>
+  <table style="width:100%;border-bottom:3px solid #33414a;padding-bottom:8px;margin-bottom:10px;">
+    <tr>
+      <td style="width:70px;vertical-align:middle;">${s.LogoUrl?`<img src="${esc(s.LogoUrl)}" style="width:56px;height:56px;object-fit:contain;">`:''}</td>
+      <td style="text-align:center;vertical-align:middle;">
+        <div style="font-weight:700;font-size:1rem;text-transform:uppercase;">Formulir Evaluasi Kinerja Karyawan Kontrak / Percobaan</div>
+      </td>
+    </tr>
   </table>
-  ${signBlockHtml(s, 'Karyawan', 'Diketahui, HR & PGA', s.DirectorName)}`;
+  <p style="text-align:right;font-size:.68rem;font-style:italic;margin:0 0 8px;">(Isilah kolom yang tersedia atau coret yang tidak perlu untuk proses pengisian data )</p>
+
+  <table style="width:100%;font-size:.82rem;margin-bottom:10px;">
+    <tr><td style="width:170px;padding:2px 0;">Nama</td><td>: ${esc(row['Nama']||'')}</td></tr>
+    <tr><td style="padding:2px 0;">Jabatan</td><td>: ${esc(row['Jabatan']||'-')}</td></tr>
+    <tr><td style="padding:2px 0;">Atasan Langsung</td><td>: ${esc(row['Atasan Langsung']||'....................................')}</td></tr>
+    <tr><td style="padding:2px 0;">Tanggal Masuk Kerja</td><td>: ${fmtDate(row['Tanggal Masuk'])}</td></tr>
+    <tr><td style="padding:2px 0;">Status Karyawan</td><td>: ${esc(row['Status Karyawan']||'-')}</td></tr>
+    <tr><td style="padding:2px 0;">Periode</td><td>: ${fmtDate(row['Tanggal Mulai Kontrak'])} &nbsp; sampai dengan &nbsp; ${fmtDate(row['Tanggal Akhir Kontrak'])}</td></tr>
+  </table>
+
+  <table style="width:100%;border-collapse:collapse;font-size:.78rem;margin-bottom:10px;">
+    <tr>
+      <th rowspan="2" style="border:1px solid #33414a;padding:4px;width:24px;">NO</th>
+      <th colspan="2" style="border:1px solid #33414a;padding:4px;">ASPEK / DEFINISI</th>
+      <th colspan="4" style="border:1px solid #33414a;padding:4px;">SKALA</th>
+      <th rowspan="2" style="border:1px solid #33414a;padding:4px;">CATATAN</th>
+    </tr>
+    <tr>
+      <th style="border:1px solid #33414a;padding:4px;" colspan="2"></th>
+      <th style="border:1px solid #33414a;padding:4px;width:22px;">1</th>
+      <th style="border:1px solid #33414a;padding:4px;width:22px;">2</th>
+      <th style="border:1px solid #33414a;padding:4px;width:22px;">3</th>
+      <th style="border:1px solid #33414a;padding:4px;width:22px;">4</th>
+    </tr>
+    ${aspekRows}
+  </table>
+
+  <table style="width:100%;border-collapse:collapse;font-size:.78rem;margin-bottom:10px;">
+    <tr>
+      <th style="border:1px solid #33414a;padding:4px;width:50%;">KEKUATAN</th>
+      <th style="border:1px solid #33414a;padding:4px;width:50%;">KELEMAHAN</th>
+    </tr>
+    <tr>
+      <td style="border:1px solid #33414a;padding:4px;height:60px;"></td>
+      <td style="border:1px solid #33414a;padding:4px;height:60px;"></td>
+    </tr>
+  </table>
+
+  <div style="font-size:.8rem;margin-bottom:10px;">
+    <p style="margin:2px 0;font-weight:600;">Hasil Penilaian :</p>
+    <p style="margin:2px 0;">&#9633;&nbsp; Tidak Lolos Masa Percobaan / Kontrak</p>
+    <p style="margin:2px 0;">&#9633;&nbsp; Perpanjangan Masa Kontrak, dengan periode berikutnya terhitung mulai ………...…… s/d ………………..</p>
+    <p style="margin:2px 0;">&#9633;&nbsp; Lolos Masa Percobaan / Kontrak dan Pengangkatan Karyawan Tetap</p>
+  </div>
+
+  <table style="width:100%;border-collapse:collapse;font-size:.72rem;text-align:center;margin-bottom:6px;">
+    <tr>
+      <th style="border:1px solid #33414a;padding:4px;">Mengajukan,</th>
+      <th style="border:1px solid #33414a;padding:4px;" colspan="3">Menyetujui,</th>
+      <th style="border:1px solid #33414a;padding:4px;">Mengetahui,</th>
+    </tr>
+    <tr>
+      <td style="border:1px solid #33414a;padding:4px;height:55px;"></td>
+      <td style="border:1px solid #33414a;padding:4px;height:55px;"></td>
+      <td style="border:1px solid #33414a;padding:4px;height:55px;"></td>
+      <td style="border:1px solid #33414a;padding:4px;height:55px;"></td>
+      <td style="border:1px solid #33414a;padding:4px;height:55px;"></td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #33414a;padding:4px;">( .............................. )</td>
+      <td style="border:1px solid #33414a;padding:4px;">( .............................. )</td>
+      <td style="border:1px solid #33414a;padding:4px;">( .............................. )</td>
+      <td style="border:1px solid #33414a;padding:4px;">( .............................. )</td>
+      <td style="border:1px solid #33414a;padding:4px;">( .............................. )</td>
+    </tr>
+  </table>
+
+  <p style="font-size:.68rem;margin:8px 0 0;">Keterangan Skala &nbsp; :</p>
+  <p style="font-size:.68rem;margin:2px 0;">1. Potensinya jauh dibawah kapasitas yang dibutuhkan (Poor)</p>
+  <p style="font-size:.68rem;margin:2px 0;">2. Potensinya mendekati kapasitas yang dibutuhkan (Marginal)</p>
+  <p style="font-size:.68rem;margin:2px 0;">3. Potensinya cukup sesuai dengan kapasitas yang dibutuhkan (Acceptable)</p>
+  <p style="font-size:.68rem;margin:2px 0 10px;">4. Potensinya bagus, diatas kapasitas yang dibutuhkan (Good)</p>
+
+  <p style="font-size:.72rem;font-weight:700;">${esc(s.CompanyGroupName||'MSAL Group')}</p>`;
 }
 function printFurnitureBody(row, s){
   const kondisi = row['Rusak'] ? 'Rusak' : (row['Perbaikan'] ? 'Dalam Perbaikan' : 'Baik');
@@ -1876,6 +2163,16 @@ function printBangunanBody(row, s){
     <tr><td style="padding:3px 0;vertical-align:top;">Keterangan</td><td>: ${esc(row['KETERANGAN']||'-')}</td></tr>
   </table>
   ${signBlockHtml(s, 'Penanggung Jawab', 'Diketahui, HR & PGA', s.DirectorName)}`;
+}
+function printMPPGridBody(row, s){
+  const rowsHtml = MODULES.mppgrid.fields.map(f=>
+    `<tr><td style="width:220px;padding:3px 0;">${esc(f.label)}</td><td>: ${esc(row[f.key]||'-')}</td></tr>`
+  ).join('');
+  return `
+  ${letterheadHtml(s)}
+  <h3 style="text-align:center;text-decoration:underline;margin-bottom:14px;">MPP REKAP (DATA LAMA)</h3>
+  <table style="width:100%;font-size:.82rem;">${rowsHtml}</table>
+  ${signBlockHtml(s, 'Dibuat Oleh', 'Diketahui, HR & PGA', s.DirectorName)}`;
 }
 function printUnitBody(row, s){
   return `
@@ -2070,21 +2367,39 @@ async function deleteSPHAngsuranRow(row, ang){
 // ══════════════════════════════════════════════════
 //  HALAMAN KHUSUS DENGAN MONITORING (Karyawan/Absensi/Cuti/MPP)
 // ══════════════════════════════════════════════════
-function warningBannerHtml(items, columns, titleOk, titleWarn, rowActions){
+const WARN_PAGE_SIZE = 10;
+let _warnPage = {};
+function warningBannerHtml(key, items, columns, titleOk, titleWarn, rowActions){
   if(!items.length) return `<div class="tc" style="border-left:4px solid var(--ok);margin-bottom:16px;"><i class="fas fa-circle-check" style="color:var(--ok)"></i> ${esc(titleOk)}</div>`;
   const cols = rowActions ? [...columns,'Aksi'] : columns;
+  const total = items.length;
+  const totalPages = Math.max(1, Math.ceil(total/WARN_PAGE_SIZE));
+  let page = _warnPage[key]||1;
+  if(page>totalPages) page = totalPages;
+  _warnPage[key] = page;
+  const start = (page-1)*WARN_PAGE_SIZE;
+  const pageItems = items.slice(start, start+WARN_PAGE_SIZE);
   return `<div class="tc" style="border-left:4px solid var(--er);margin-bottom:16px;">
     <h3 style="color:var(--er);margin-bottom:10px;"><i class="fas fa-triangle-exclamation"></i> ${esc(titleWarn)} (${items.length})</h3>
     <div class="tw"><table><thead><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead>
-      <tbody>${items.map((r,i)=>`<tr>${columns.map(c=>`<td>${esc(r[c])}</td>`).join('')}${rowActions?`<td>${rowActions(r,i)}</td>`:''}</tr>`).join('')}</tbody></table></div>
+      <tbody>${pageItems.map((r,i)=>{ const gi=start+i; return `<tr>${columns.map(c=>`<td>${esc(r[c])}</td>`).join('')}${rowActions?`<td>${rowActions(r,gi)}</td>`:''}</tr>`; }).join('')}</tbody></table></div>
+    <div class="pgn" id="warnPgn_${key}"></div>
   </div>`;
+}
+/** Dipanggil setelah HTML dari warningBannerHtml() dipasang ke DOM, supaya
+ * tombol halaman di banner peringatan berfungsi (re-render ulang halaman
+ * penuh lewat rerenderFn, sambil mempertahankan nomor halaman peringatan
+ * yang sedang aktif di _warnPage[key]). */
+function wireWarnPagination(key, total, rerenderFn){
+  renderPaginationHtml('warnPgn_'+key, total, _warnPage[key]||1, WARN_PAGE_SIZE, (p)=>{ _warnPage[key]=p; rerenderFn(); });
 }
 async function renderKaryawanPage(){
   const kw = await getKaryawanWarningsData();
-  const banner = warningBannerHtml(kw.data, ['NIK','Nama','Jabatan','Departemen / Afdeling','Tanggal Masuk','Masa Kerja (Hari)','Keterangan'],
+  const banner = warningBannerHtml('karyawan', kw.data, ['NIK','Nama','Jabatan','Departemen / Afdeling','Tanggal Masuk','Masa Kerja (Hari)','Keterangan'],
     'Tidak ada karyawan PKWT yang memerlukan penilaian/perpanjangan saat ini.',
     'Karyawan PKWT Perlu Penilaian/Perpanjangan Kontrak (>3 bulan)');
   await renderModulePage('karyawan', banner);
+  wireWarnPagination('karyawan', kw.data.length, renderKaryawanPage);
 }
 let _absensiWarnRows = [];
 async function renderAbsensiPage(){
@@ -2102,10 +2417,11 @@ async function renderAbsensiPage(){
       </select>
       <button class="btn btn-ol btn-sm" style="padding:2px 8px;font-size:.72rem;" onclick="printAbsensiSurat(${i})" title="Cetak surat sesuai jenis & tingkat yang dipilih"><i class="fas fa-print"></i></button>
     </div>`;
-  const banner = warningBannerHtml(aw.data, ['NIK','Nama Karyawan','Jabatan','Total Mangkir (M)','Mangkir Berturut-turut Terbanyak','Rekomendasi'],
+  const banner = warningBannerHtml('absensi', aw.data, ['NIK','Nama Karyawan','Jabatan','Total Mangkir (M)','Mangkir Berturut-turut Terbanyak','Rekomendasi'],
     'Tidak ada karyawan dengan indikasi mangkir berlebih saat ini.',
     'Perlu Surat Peringatan — Mangkir 3x Berturut-turut atau Total ≥ 8 Hari', rowActions);
   await renderModulePage('absensi', banner);
+  wireWarnPagination('absensi', aw.data.length, renderAbsensiPage);
 }
 /** Cetak Surat Panggilan / Surat Teguran-Peringatan untuk 1 baris warning absensi. */
 /**
@@ -2226,16 +2542,18 @@ function printAbsensiSuratBody(row, s, jenis, level, karyawan){
 async function renderCutiPage(){
   const cm = await getCutiMonitoringData();
   const warn = cm.data.filter(r=>r.Warning);
-  const banner = warningBannerHtml(warn, ['Nik','Nama','Sisa Cuti Tahun Lalu','Cuti Diambil Tahun Ini','Jumlah Diminta','Sisa Cuti Setelah Ini','Warning'],
+  const banner = warningBannerHtml('cuti', warn, ['Nik','Nama','Sisa Cuti Tahun Lalu','Cuti Diambil Tahun Ini','Jumlah Diminta','Sisa Cuti Setelah Ini','Warning'],
     'Semua sisa hak cuti karyawan masih aman.', 'Sisa Cuti Habis / Minus — Perlu Verifikasi');
   await renderModulePage('cuti', banner);
+  wireWarnPagination('cuti', warn.length, renderCutiPage);
 }
 async function renderMPPPage(){
   const mm = await getMPPMonitoringData();
   const kurang = mm.data.filter(r=>Number(r['Kekurangan / Kelebihan'])>0);
-  const banner = warningBannerHtml(kurang, ['Departemen / Afdeling','Jabatan','Kebutuhan (Standar)','Existing (Saat Ini)','Kekurangan / Kelebihan','Bulan Rencana Pemenuhan','Jumlah Rencana Pemenuhan'],
+  const banner = warningBannerHtml('mpp', kurang, ['Departemen / Afdeling','Jabatan','Kebutuhan (Standar)','Existing (Saat Ini)','Kekurangan / Kelebihan','Bulan Rencana Pemenuhan','Jumlah Rencana Pemenuhan'],
     'Tidak ada kekurangan tenaga kerja saat ini.', 'Kekurangan Tenaga Kerja — Perlu Rencana Pemenuhan');
   await renderModulePage('mpp', banner);
+  wireWarnPagination('mpp', kurang.length, renderMPPPage);
 }
 
 // ══════════════════════════════════════════════════
@@ -2441,7 +2759,7 @@ async function renderReportsPage(){
     <div class="ph"><div><h1>Report</h1><p>Rekap data lintas modul, filter berdasarkan tanggal, lalu export atau cetak.</p></div></div>
     <div class="tc">
       <div class="ta" style="gap:12px;">
-        <select class="sel-sm" id="rptModule">
+        <select class="sel-sm" id="rptModule" onchange="updateReportWarningToggle()">
           <option value="surat">Surat Masuk & Keluar</option>
           <option value="sph">Monitoring SPH</option>
           <option value="suratDinas">Surat Dinas & Ijin Keluar Kebun</option>
@@ -2458,6 +2776,9 @@ async function renderReportsPage(){
         <input type="date" class="sel-sm" id="rptFrom">
         <span style="color:var(--tm);font-size:.8rem;">s/d</span>
         <input type="date" class="sel-sm" id="rptTo">
+        <label id="rptWarnWrap" style="display:none;align-items:center;gap:6px;font-size:.8rem;color:var(--tm);cursor:pointer;">
+          <input type="checkbox" id="rptOnlyWarning" onchange="runReport()"> <span id="rptWarnLabel">Hanya Warning/Alert</span>
+        </label>
         <button class="btn btn-pr btn-sm" onclick="runReport()"><i class="fas fa-magnifying-glass"></i> Tampilkan</button>
         <div style="flex:1"></div>
         <button class="btn btn-ol btn-sm" onclick="exportReportCSV()"><i class="fas fa-file-csv"></i> Export CSV</button>
@@ -2467,7 +2788,60 @@ async function renderReportsPage(){
       <div class="tw"><table id="rptTable"><thead><tr id="rptHead"></tr></thead><tbody id="rptBody"></tbody></table></div>
       <div class="pgn" id="rptPgn"></div>
     </div>`;
+  updateReportWarningToggle();
   await runReport();
+}
+// ── Filter "Hanya Warning/Alert" di Report — 1 predikat per modul yang
+// memang punya konsep warning (sama seperti dipakai di banner peringatan
+// masing-masing modul: Karyawan PKWT, Absensi mangkir, Cuti, MPP, SPH). ──
+const REPORT_WARNING_LABELS = {
+  sph:      'Hanya SPH yang masih ada Sisa Hutang (belum lunas)',
+  karyawan: 'Hanya PKWT yang perlu Penilaian/Perpanjangan Kontrak (>3 bulan)',
+  absensi:  'Hanya karyawan dengan indikasi mangkir berlebih (perlu Surat Peringatan)',
+  cuti:     'Hanya Cuti dengan sisa cuti habis/minus',
+  mpp:      'Hanya Jabatan yang kekurangan tenaga kerja',
+  asset:    'Hanya Asset yang Rusak / Perlu Perbaikan',
+  furniture:'Hanya Furniture yang Rusak / Dalam Perbaikan',
+  bangunan: 'Hanya Bangunan dengan catatan Rusak / Perlu Perbaikan',
+  unit:     'Hanya Unit dengan Kondisi Rusak'
+};
+const REPORT_WARNING_FILTERS = {
+  sph: async (rows) => rows.filter(r => Number(r['Sisa Hutang']||0) > 0),
+  karyawan: async (rows) => {
+    const now = new Date();
+    return rows.filter(r=>{
+      if(String(r['Status Karyawan']).toUpperCase()!=='PKWT') return false;
+      if(String(r['Status Aktif']||'Aktif')!=='Aktif') return false;
+      const masuk = new Date(r['Tanggal Masuk']); if(isNaN(masuk)) return false;
+      return daysBetween(masuk, now) >= 90;
+    });
+  },
+  absensi: async (rows) => {
+    const aw = await getAbsensiWarningsData();
+    const nikSet = new Set(aw.data.map(x=>x.NIK));
+    return rows.filter(r=> nikSet.has(r['NIK']));
+  },
+  cuti: async (rows) => rows.filter(r => Number(r['Sisa Cuti Setelah Ini']||0) <= 0),
+  mpp: async (rows) => rows.filter(r => (Number(r['Kebutuhan (Standar)']||0) - Number(r['Existing (Saat Ini)']||0)) > 0),
+  // ── Filter lintas 4 kategori asset: tandai "rusak / perlu perbaikan"
+  // memakai kolom kondisi masing-masing modul (beda struktur per modul). ──
+  asset:     async (rows) => rows.filter(r => /rusak/i.test(String(r['Kondisi']||'')) || r['Status']==='Diperbaiki'),
+  furniture: async (rows) => rows.filter(r => r['Rusak'] || r['Perbaikan']),
+  bangunan:  async (rows) => rows.filter(r => /rusak|perbaikan/i.test(String(r['KETERANGAN']||''))),
+  unit:      async (rows) => rows.filter(r => /rusak/i.test(String(r['KONDISI_UNIT']||'')))
+};
+function updateReportWarningToggle(){
+  const key = document.getElementById('rptModule').value;
+  const wrap = document.getElementById('rptWarnWrap');
+  const label = document.getElementById('rptWarnLabel');
+  const chk = document.getElementById('rptOnlyWarning');
+  if(REPORT_WARNING_FILTERS[key]){
+    wrap.style.display = 'flex';
+    label.textContent = REPORT_WARNING_LABELS[key];
+  } else {
+    wrap.style.display = 'none';
+    chk.checked = false;
+  }
 }
 const DATE_FIELD_MAP = {
   surat:'Tanggal', sph:'Tanggal', suratDinas:'Tanggal', asset:'Tgl Update',
@@ -2492,22 +2866,36 @@ async function runReport(){
   const key = document.getElementById('rptModule').value;
   const from = document.getElementById('rptFrom').value;
   const to = document.getElementById('rptTo').value;
+  const onlyWarning = document.getElementById('rptOnlyWarning').checked;
   const mod = MODULES[key];
   let data = await mod.getData();
   const dateField = DATE_FIELD_MAP[key];
   if(dateField){
-    if(from) data = data.filter(r=> String(r[dateField]||'') >= from);
-    if(to)   data = data.filter(r=> String(r[dateField]||'') <= to);
+    // Baris tanpa nilai tanggal (mis. data Asset/Furniture/Bangunan/Unit
+    // lama/hasil import yang belum pernah mengisi "Tgl Input") TIDAK
+    // dibuang oleh filter rentang tanggal — kalau dibuang, tabel bisa
+    // kosong total padahal datanya ada (lihat kartu "Rusak/Perlu Perbaikan"
+    // yang menghitung dari seluruh data, bukan dari hasil filter tanggal).
+    if(from) data = data.filter(r=> !r[dateField] || String(r[dateField]) >= from);
+    if(to)   data = data.filter(r=> !r[dateField] || String(r[dateField]) <= to);
+  }
+  if(onlyWarning && REPORT_WARNING_FILTERS[key]){
+    data = await REPORT_WARNING_FILTERS[key](data);
   }
   _lastReport = { key, mod, data };
   _rptPage = 1;
   renderReportTablePage(mod, data);
 
+  let rusakCount = null;
+  if(['asset','furniture','bangunan','unit'].includes(key) && REPORT_WARNING_FILTERS[key]){
+    rusakCount = (await REPORT_WARNING_FILTERS[key](await mod.getData())).length;
+  }
   const summary = document.getElementById('rptSummary');
   summary.innerHTML = `
     <div class="kpi"><h3>Total Data</h3><h2>${data.length}</h2></div>
     ${key==='sph'?`<div class="kpi"><h3>Total Hutang</h3><h2>${fmtMoney(data.reduce((s,r)=>s+Number(r['Jumlah Hutang']||0),0))}</h2></div><div class="kpi"><h3>Total Sisa Hutang</h3><h2>${fmtMoney(data.reduce((s,r)=>s+Number(r['Sisa Hutang']||0),0))}</h2></div>`:''}
     ${key==='asset'?`<div class="kpi"><h3>Total Nilai Perolehan</h3><h2>${fmtMoney(data.reduce((s,r)=>s+Number(r['Nilai Perolehan']||0),0))}</h2></div>`:''}
+    ${rusakCount!==null?`<div class="kpi"><h3>Rusak / Perlu Perbaikan</h3><h2 style="color:var(--er,#c0392b)">${rusakCount}</h2></div>`:''}
   `;
 }
 function exportReportCSV(){
