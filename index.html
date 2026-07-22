@@ -7,19 +7,32 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
-  --bg:#f4f7f6; --card:#ffffff; --bd:#e5eae8; --bd2:#eef2f1;
-  --pr:#6b9080; --pr2:#557a6b; --pr3:#8fb6a3; --pr-soft:#eaf2ee;
-  --ac:#7fa6c9; --ac-soft:#eaf1f8;
-  --tx:#33414a; --tm:#7c8a91; --tl:#9aa7ad;
-  --er:#d97b6c; --er-soft:#fbebe8;
-  --wa:#d7a24a; --wa-soft:#faf1e1;
-  --ok:#6ea88a; --ok-soft:#e9f4ee;
-  --sb:#ffffff; --shadow:0 2px 14px rgba(51,65,74,.06);
+  /* ── Palet default — saturasi & kontras dinaikkan sedikit dari versi
+     sebelumnya (terlalu pudar), plus varian --card jadi translucent
+     supaya kartu punya efek "kaca" tipis di atas gradient body. ── */
+  --bg:#eef4f1; --card:rgba(255,255,255,.74); --card-solid:#ffffff; --bd:#dde7e2; --bd2:#eaf1ee;
+  --pr:#4d8a70; --pr2:#396a54; --pr3:#7fbb9d; --pr-soft:#e2f0e8;
+  --ac:#4f89bf; --ac-soft:#e4eff8;
+  --tx:#26333b; --tm:#5e6e76; --tl:#8c9aa1;
+  --er:#d1543e; --er-soft:#fbe6e1;
+  --wa:#c98a1f; --wa-soft:#faedd7;
+  --ok:#3b9e6c; --ok-soft:#e0f3e8;
+  --sb:rgba(255,255,255,.82); --shadow:0 2px 16px rgba(38,51,59,.08);
+  --card-modal:rgba(255,255,255,.92);
+  --glass-blur:16px;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);}
+body{
+  font-family:'Inter',sans-serif;color:var(--tx);
+  background:
+    radial-gradient(circle at 12% 0%, #e2f0e7 0%, transparent 42%),
+    radial-gradient(circle at 100% 15%, #e2edf5 0%, transparent 48%),
+    var(--bg);
+  background-attachment:fixed;
+}
 h1,h2,h3,h4{font-family:'Poppins',sans-serif;}
 ::-webkit-scrollbar{width:6px;height:6px;}
 ::-webkit-scrollbar-thumb{background:var(--bd);border-radius:6px;}
@@ -120,34 +133,42 @@ body.theme-glass ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.35);}
 /* Sengaja TIDAK memakai hitam pekat/putih murni — semua warna sedikit
    diredupkan (dusty/muted) supaya nyaman dipakai lama, terutama malam hari. */
 body.theme-dark{
-  --bg:#1b2027; --card:#232a33; --bd:#333d49; --bd2:#2b333d;
-  --pr:#7fae9c; --pr2:#9bcab5; --pr3:#6b9080; --pr-soft:rgba(127,174,156,.14);
-  --ac:#8db6dd; --ac-soft:rgba(141,182,221,.14);
-  --tx:#dbe2e8; --tm:#93a0aa; --tl:#69747e;
-  --er:#e69686; --er-soft:rgba(230,150,134,.14);
-  --wa:#e0bb79; --wa-soft:rgba(224,187,121,.14);
-  --ok:#8ecda6; --ok-soft:rgba(142,205,166,.14);
-  --sb:#1f252d; --shadow:0 2px 16px rgba(0,0,0,.35);
+  --bg:#171b21; --card:rgba(35,42,51,.68); --card-solid:#232a33; --bd:#39434f; --bd2:#2b333d;
+  --pr:#6fc7a4; --pr2:#8fdcb9; --pr3:#4f8a6f; --pr-soft:rgba(111,199,164,.16);
+  --ac:#7cb3e8; --ac-soft:rgba(124,179,232,.16);
+  --tx:#e4eaef; --tm:#a3b0b9; --tl:#71808a;
+  --er:#ea9686; --er-soft:rgba(234,150,134,.16);
+  --wa:#e9c07c; --wa-soft:rgba(233,192,124,.16);
+  --ok:#7fd4a5; --ok-soft:rgba(127,212,165,.16);
+  --sb:rgba(31,37,45,.75); --shadow:0 2px 18px rgba(0,0,0,.4);
+  --card-modal:rgba(29,35,42,.92);
 }
-body.theme-dark #loginPage{background:linear-gradient(150deg,#1b2027,#20262e 45%,#1c232b);}
-body.theme-dark .lc-note{border-color:#4a4022;color:#e0bb79;}
-body.theme-dark .lc-err{border-color:#5a3a34;color:#e69686;}
+body.theme-dark{
+  background:
+    radial-gradient(circle at 12% 0%, #1d2530 0%, transparent 45%),
+    radial-gradient(circle at 100% 15%, #1a222b 0%, transparent 50%),
+    var(--bg);
+  background-attachment:fixed;
+}
+body.theme-dark #loginPage{background:linear-gradient(150deg,#171b21,#1c232b 45%,#181e25);}
+body.theme-dark .lc-note{border-color:#4a4022;color:#e9c07c;}
+body.theme-dark .lc-err{border-color:#5a3a34;color:#ea9686;}
 
 /* Elemen yang warnanya di-hardcode (bukan var()) perlu override manual */
 body.theme-dark .fc, body.theme-dark .si, body.theme-dark .sel-sm,
 body.theme-dark select, body.theme-dark input, body.theme-dark textarea{
-  background:#262e38; color:var(--tx); border-color:var(--bd);
+  background:rgba(38,46,56,.75); color:var(--tx); border-color:var(--bd);
 }
 body.theme-dark select, body.theme-dark .sel-sm{ color-scheme: dark; }
 body.theme-dark select option{ background:#262e38; color:var(--tx); }
-body.theme-dark .btn-ol{background:#262e38;border-color:var(--bd);color:var(--tm);}
+body.theme-dark .btn-ol{background:rgba(38,46,56,.75);border-color:var(--bd);color:var(--tm);}
 body.theme-dark .btn-ol:hover{background:#2c3540;color:var(--pr2);}
-body.theme-dark .stb{background:#262e38;color:var(--pr2);}
-body.theme-dark .mb{background:var(--card);box-shadow:0 20px 60px rgba(0,0,0,.5);}
-body.theme-dark .pgn button{background:#262e38;color:var(--tx);}
-body.theme-dark tbody tr:hover{background:rgba(255,255,255,.03);}
-body.theme-dark .badge.bp{background:rgba(197,168,235,.16);color:#c8aef0;}
-body.theme-dark .badge.bn{background:rgba(255,255,255,.08);color:var(--tm);}
+body.theme-dark .stb{background:rgba(38,46,56,.85);color:var(--pr2);}
+body.theme-dark .mb{background:var(--card-modal);box-shadow:0 20px 60px rgba(0,0,0,.5);}
+body.theme-dark .pgn button{background:rgba(38,46,56,.75);color:var(--tx);}
+body.theme-dark tbody tr:hover{background:rgba(255,255,255,.04);}
+body.theme-dark .badge.bp{background:rgba(197,168,235,.18);color:#d2bdf3;}
+body.theme-dark .badge.bn{background:rgba(255,255,255,.09);color:var(--tm);}
 body.theme-dark .theme-opt{background:var(--card);}
 
 /* ApexCharts: mode gelap dengan warna teks lembut (bukan putih terang) */
@@ -164,7 +185,7 @@ body.theme-dark ::-webkit-scrollbar-thumb{background:#3a4450;}
 
 /* LOGIN */
 #loginPage{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(150deg,#eef4f1,#f7faf8 45%,#eaf1f6);}
-.lc{background:var(--card);border:1px solid var(--bd);border-radius:18px;box-shadow:0 10px 40px rgba(85,122,107,.12);padding:42px 40px;width:100%;max-width:400px;}
+.lc{background:var(--card);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border:1px solid var(--bd);border-radius:18px;box-shadow:0 10px 40px rgba(38,51,59,.14);padding:42px 40px;width:100%;max-width:400px;}
 .lc-logo{text-align:center;margin-bottom:6px;}
 .lc-logo i{font-size:2.4rem;color:var(--pr);background:var(--pr-soft);width:64px;height:64px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;}
 .lc-title{text-align:center;font-weight:700;font-size:1.4rem;color:var(--pr2);margin:14px 0 4px;}
@@ -183,7 +204,7 @@ body.theme-dark ::-webkit-scrollbar-thumb{background:#3a4450;}
 /* APP */
 #appPage{display:none;}
 .dev-banner{background:var(--wa-soft);color:#a8781f;text-align:center;padding:7px;font-weight:500;font-size:.8rem;}
-.sidebar{width:258px;position:fixed;top:0;left:0;height:100vh;background:var(--sb);border-right:1px solid var(--bd);overflow-y:auto;z-index:1000;transition:width .25s ease;}
+.sidebar{width:258px;position:fixed;top:0;left:0;height:100vh;background:var(--sb);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border-right:1px solid var(--bd);overflow-y:auto;z-index:1000;transition:width .25s ease;}
 .at{font-weight:700;font-size:1.15rem;padding:22px 20px;border-bottom:1px solid var(--bd2);color:var(--pr2);display:flex;align-items:center;gap:10px;white-space:nowrap;overflow:hidden;}
 .at i{color:var(--pr);font-size:1.3rem;flex-shrink:0;}
 .sui{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--bd2);}
@@ -215,7 +236,7 @@ body.theme-dark ::-webkit-scrollbar-thumb{background:#3a4450;}
 .ph p{color:var(--tm);font-size:.87rem;}
 
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:22px;}
-.kpi{background:var(--card);border:1px solid var(--bd);border-radius:14px;box-shadow:var(--shadow);padding:18px;display:flex;flex-direction:column;gap:8px;}
+.kpi{background:var(--card);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border:1px solid var(--bd);border-radius:14px;box-shadow:var(--shadow);padding:18px;display:flex;flex-direction:column;gap:8px;}
 .kpi .ki{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;}
 .kpi h3{font-size:.78rem;font-weight:500;color:var(--tm);}
 .kpi h2{font-size:1.25rem;font-weight:700;color:var(--tx);}
@@ -226,10 +247,10 @@ body.theme-dark ::-webkit-scrollbar-thumb{background:#3a4450;}
 .ic-sage{background:var(--pr-soft);color:var(--pr);}
 
 .cr{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:18px;}
-.cc{background:var(--card);border:1px solid var(--bd);border-radius:14px;box-shadow:var(--shadow);padding:18px;flex:1;min-width:280px;}
+.cc{background:var(--card);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border:1px solid var(--bd);border-radius:14px;box-shadow:var(--shadow);padding:18px;flex:1;min-width:280px;}
 .cc h3{font-size:.92rem;margin-bottom:10px;color:var(--tx);font-weight:600;}
 
-.tc{background:var(--card);border:1px solid var(--bd);border-radius:14px;box-shadow:var(--shadow);padding:20px;margin-bottom:18px;overflow:hidden;}
+.tc{background:var(--card);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border:1px solid var(--bd);border-radius:14px;box-shadow:var(--shadow);padding:20px;margin-bottom:18px;overflow:hidden;}
 .tc h3{font-size:1rem;color:var(--tx);margin-bottom:14px;font-weight:600;}
 .ta{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
 .si{padding:9px 13px;border:1px solid var(--bd);border-radius:8px;background:#fbfdfc;color:var(--tx);font-size:.85rem;width:220px;}
@@ -270,7 +291,7 @@ tbody td{padding:11px 12px;font-size:.82rem;color:var(--tx);white-space:nowrap;}
 /* MODAL */
 .mo{display:none;position:fixed;inset:0;background:rgba(51,65,74,.45);z-index:2000;align-items:center;justify-content:center;padding:16px;}
 .mo.open{display:flex;}
-.mb{background:#fff;border-radius:16px;padding:26px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.mb{background:var(--card-modal);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border-radius:16px;padding:26px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
 .mb.wide{max-width:820px;}
 .mb h2{color:var(--tx);margin-bottom:18px;font-size:1.1rem;font-weight:600;}
 .fr{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
@@ -311,6 +332,69 @@ tbody td{padding:11px 12px;font-size:.82rem;color:var(--tx);white-space:nowrap;}
 .dim-chip{display:inline-flex;align-items:center;gap:6px;background:var(--pr-soft);color:var(--pr2);padding:5px 10px;border-radius:20px;font-size:.78rem;margin:0 6px 6px 0;}
 .dim-chip i{cursor:pointer;color:var(--er);font-size:.7rem;}
 
+/* ══════ PERUMAHAN KARYAWAN — denah per tipe rumah (G1/G5/G10) & checklist ══════ */
+.prm-filter-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+.prm-filter-bar .fg2{min-width:220px;margin:0;}
+
+.prm-check-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:2px 0 14px;}
+.prm-check-item{display:flex;align-items:center;gap:8px;padding:9px 11px;border-radius:9px;background:var(--pr-soft);border:1px solid var(--bd);font-size:.78rem;color:var(--tx);}
+.prm-check-item i{color:var(--ok);font-size:.8rem;}
+.prm-check-item.bad{background:var(--er-soft);}
+.prm-check-item.bad i{color:var(--er);}
+
+.prm-site-layout{display:flex;flex-direction:column;gap:16px;}
+.prm-site-block{background:#fbfdfc;border:1px solid var(--bd);border-radius:12px;padding:14px 16px;}
+.prm-site-block-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px;flex-wrap:wrap;}
+.prm-site-block-title{font-family:'Poppins',sans-serif;font-size:.78rem;letter-spacing:.4px;color:var(--pr2);text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+.prm-site-block-title .sub{color:var(--tm);text-transform:none;letter-spacing:0;font-size:.72rem;}
+.prm-site-block-count{font-size:.72rem;color:var(--tm);white-space:nowrap;}
+
+.prm-site-block-grid{display:grid;gap:10px;}
+.prm-site-block-grid.tipe-g1{grid-template-columns:repeat(auto-fill,minmax(64px,1fr));}
+.prm-site-block-grid.tipe-g5{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));}
+.prm-site-block-grid.tipe-g10{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));}
+.prm-site-block-grid.tipe-lainnya{grid-template-columns:repeat(auto-fill,minmax(90px,1fr));}
+
+.prm-site-unit{position:relative;border-radius:8px;background:#fff;border:1px solid var(--bd);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:10px 6px;font-size:.68rem;color:var(--tm);text-align:center;}
+.prm-site-unit.occupied{cursor:pointer;background:var(--ok-soft);border-color:#bfe0cf;color:var(--tx);transition:.15s ease;}
+.prm-site-unit.occupied.bad{background:var(--er-soft);border-color:#f0c4bb;}
+.prm-site-unit.occupied:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(51,65,74,.12);}
+.prm-site-icon{font-size:13px;color:var(--tm);}
+.prm-site-unit.occupied .prm-site-icon{color:var(--ok);}
+.prm-site-unit.occupied.bad .prm-site-icon{color:var(--er);}
+.prm-site-code{font-size:.68rem;letter-spacing:.2px;color:var(--tx);word-break:break-word;}
+.prm-site-flag{position:absolute;top:-7px;right:-6px;font-size:11px;color:var(--ok);}
+.prm-site-unit.bad .prm-site-flag{color:var(--er);}
+
+.prm-kotak{border:1.5px solid var(--bd);border-radius:10px;background:#fff;padding:8px;display:flex;flex-direction:column;gap:6px;}
+.prm-kotak-label{font-family:'Poppins',sans-serif;font-size:.66rem;letter-spacing:.4px;color:var(--pr2);text-align:center;text-transform:uppercase;padding-bottom:5px;border-bottom:1px dashed var(--bd);display:flex;align-items:center;justify-content:center;gap:5px;}
+.prm-kotak-doors{display:grid;gap:5px;}
+.prm-kotak-doors.doors-5{grid-template-columns:repeat(5,1fr);}
+.prm-kotak-doors.doors-10{grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(2,1fr);}
+
+.prm-door{position:relative;border-radius:6px;background:#fff;border:1px solid var(--bd);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px 2px;font-size:.6rem;color:var(--tm);text-align:center;min-width:0;}
+.prm-door.occupied{cursor:pointer;background:var(--ok-soft);border-color:#bfe0cf;color:var(--tx);transition:.15s ease;}
+.prm-door.occupied.bad{background:var(--er-soft);border-color:#f0c4bb;}
+.prm-door.occupied:hover{transform:translateY(-2px);box-shadow:0 3px 9px rgba(51,65,74,.12);}
+.prm-door.empty{opacity:.45;border-style:dashed;}
+.prm-door .prm-site-icon{font-size:11px;color:var(--tm);}
+.prm-door.occupied .prm-site-icon{color:var(--ok);}
+.prm-door.occupied.bad .prm-site-icon{color:var(--er);}
+.prm-door .prm-site-code{font-size:.6rem;letter-spacing:.15px;line-height:1.15;}
+.prm-door .prm-site-flag{position:absolute;top:-6px;right:-5px;font-size:9px;color:var(--ok);}
+.prm-door.bad .prm-site-flag{color:var(--er);}
+
+.prm-legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:14px;padding-top:12px;border-top:1px solid var(--bd);}
+.prm-legend-row{display:flex;align-items:center;gap:8px;font-size:.76rem;color:var(--tm);}
+
+.prm-house-card{background:var(--card);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border:1px solid var(--bd);border-radius:14px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:16px;}
+.prm-house-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+.prm-house-card-head h4{font-size:.95rem;color:var(--tx);font-weight:600;}
+.prm-house-card-head .sub{font-size:.74rem;color:var(--tm);font-weight:500;}
+.prm-house-penghuni{font-size:.8rem;color:var(--tx);}
+.prm-house-penghuni div{margin-top:3px;}
+.prm-house-penghuni i{color:var(--tm);width:14px;}
+
 @media(max-width:768px){
   .sidebar{width:68px;}.sidebar .at span,.sidebar .ni span,.sidebar .sui div{display:none;}
   .mc{margin-left:68px;}.stb{display:none;}
@@ -336,6 +420,7 @@ tbody td{padding:11px 12px;font-size:.82rem;color:var(--tx);white-space:nowrap;}
     <button class="lb" onclick="doLogin()"><i class="fas fa-right-to-bracket"></i> Masuk</button>
     <div class="lc-foot" id="loginFoot">Mode demo: admin / admin123</div>
     <div class="lc-foot"><a onclick="openLoginBackendSettings()">Pengaturan Backend</a></div>
+    <div class="lc-foot"><a onclick="openLoginExcelSync()"><i class="fas fa-file-excel"></i> Backup / Sinkron Database Excel</a></div>
     <div class="lc-foot">
       <label style="cursor:pointer;"><a>Mode Offline (Import Data .json)</a>
         <input type="file" accept="application/json" style="display:none;" onchange="importOfflineFileAtLogin(this)">
@@ -353,6 +438,7 @@ tbody td{padding:11px 12px;font-size:.82rem;color:var(--tx);white-space:nowrap;}
     <div class="sui"><div class="av" id="avInit">A</div><div><div class="sun" id="sbName">User</div><div class="sur" id="sbRole">Role</div></div></div>
     <div class="nav" id="nav">
       <div class="ni active" data-p="dashboard"><i class="fas fa-gauge-high"></i><span>Dashboard</span></div>
+      <div class="ni" data-p="terpadu"><i class="fas fa-bolt"></i><span>Input Terpadu</span></div>
       <div class="nav-sep">Dokumen</div>
       <div class="ni" data-p="surat"><i class="fas fa-envelope-open-text"></i><span>Surat Masuk & Keluar</span></div>
       <div class="ni" data-p="sph"><i class="fas fa-file-signature"></i><span>Monitoring SPH</span></div>
@@ -362,8 +448,11 @@ tbody td{padding:11px 12px;font-size:.82rem;color:var(--tx);white-space:nowrap;}
       <div class="ni" data-p="absensi"><i class="fas fa-calendar-check"></i><span>Monitoring Absensi</span></div>
       <div class="ni" data-p="cuti"><i class="fas fa-umbrella-beach"></i><span>Monitoring Cuti</span></div>
       <div class="ni" data-p="mpp"><i class="fas fa-users-gear"></i><span>Monitoring MPP</span></div>
-      <div class="ni" data-p="mppgrid"><i class="fas fa-table-list"></i><span>MPP Rekap (Data Lama)</span></div>
       <div class="ni" data-p="mop"><i class="fas fa-motorcycle"></i><span>Monitoring MOP</span></div>
+      <div class="nav-sep">Perumahan</div>
+      <div class="ni" data-p="perumahan"><i class="fas fa-house"></i><span>Perumahan Karyawan</span></div>
+      <div class="nav-sep">Anak & TPA</div>
+      <div class="ni" data-p="anak"><i class="fas fa-child-reaching"></i><span>Data Anak (Sekolah &amp; TPA)</span></div>
       <div class="nav-sep">Asset</div>
       <div class="ni" data-p="furniture"><i class="fas fa-chair"></i><span>Asset Furniture</span></div>
       <div class="ni" data-p="bangunan"><i class="fas fa-building"></i><span>Asset Bangunan</span></div>
@@ -421,6 +510,7 @@ const DIM_DEFAULT = {
   'Sifat Surat': ['Biasa','Penting','Segera','Rahasia'],
   'Jenis Surat Dinas': ['Surat Dinas','Ijin Keluar Kebun'],
   'Departemen': ['HR & PGA','Produksi','Kebun','Pabrik','Keuangan','Umum'],
+  'Lokasi / Afd': ['Afd 1','Afd 2','Afd 3','Afd 4','Afd 5','Kantor Pusat','Pabrik','Gudang'],
   'Kategori Asset': ['Kendaraan','Elektronik','Furniture','Alat Berat','Bangunan','Lainnya'],
   'Kondisi Asset': ['Baik','Rusak Ringan','Rusak Berat'],
   'Status Karyawan': ['PKWT','PKWTT','Harian Lepas','Borongan','Magang'],
@@ -492,7 +582,7 @@ const DEMO_MPP = [
   {_row:2,'Departemen / Afdeling':'Afd 1','Jabatan':'Pemanen','Kebutuhan (Standar)':20,'Existing (Saat Ini)':16,'Kekurangan / Kelebihan':4,'Bulan Rencana Pemenuhan':'Agustus','Jumlah Rencana Pemenuhan':4,'Catatan':'Rekrut PKWT baru'}
 ];
 const DEMO_MOP = [
-  {_row:2,'No':1,'NIK':'PSAM-0002','User':'Rina Wulandari','Jabatan':'Admin Kebun','MOP Ke':1,'Type Motor':'Honda Beat','Tahun Pembuatan':2023,'No. Plat':'KH 4021 RW','No. Rangka':'MH1JM1234K123456','No. Mesin':'JM12E1234567','Warna':'Hitam','Potongan Ke':18,'Mulai Angsuran':'2024-08-25','Ket':'','Tahun Lunas':2027}
+  {_row:2,'No':1,'NIK':'PSAM-0002','User':'Rina Wulandari','Jabatan':'Admin Kebun','MOP Ke':1,'Type Motor':'Honda Beat','Tahun Pembuatan':2023,'No. Plat':'KH 4021 RW','No. Rangka':'MH1JM1234K123456','No. Mesin':'JM12E1234567','Warna':'Hitam','Potongan Ke':33,'Tenor (Bulan)':36,'Cicilan Per Bulan':450000,'Mulai Angsuran':'2023-11-25','Ket':'','Tahun Lunas':2026}
 ];
 const DEMO_FURNITURE = [
   {_row:2,'No':1,'Nama_Barang':'Kursi Kantor','kode_Barang':'KRS','Jumlah':1,'Sat':'UNIT','Registrasi_Kodefikasi':'PSAM/23 01/A/D1 06 01/0001','Merk':'Chitose','Spesifikasi':'Kursi putar','Serial_Number':'','Lokasi_Aktiva':'Kantor HR','Kode_Lokasi_Aktiva':'D1 06 01','Bulan_Perolehan':'01','Tahun_Perolehan_':2023,'Penanggung_Jawab':'Staff HR','Jabatan':'Staff HR','Baik':'V','Rusak':'','Perbaikan':'','Kodefikasi_Aseet':'A','Harga':750000,'Keterangan':'','Register_Asset':'PSAM/23 01/A/D1 06 01/0001'}
@@ -502,6 +592,17 @@ const DEMO_BANGUNAN = [
 ];
 const DEMO_UNIT = [
   {_row:2,'JENIS':'AC Split','NAMA_UNIT':'AC Split 1 PK','KODE_UNIT':'ACS-0002','NO.POLISI':'','MERK/TYPE':'Samsung 1 PK','NO_CHASIS':'','NO_MESIN':'','PEROLEHAN':'12/2016','BBM':'-','KONDISI_UNIT':'Baik','ALOKASI':'Mess Longhouse - Kmr.4','USER':'Aji Pangestu'}
+];
+// ── Perumahan Karyawan (denah G1/G5/G10 + checklist kondisi) ──────────────
+const DEMO_PERUMAHAN = [
+  {_row:2,'Kode Rumah':'G1-01','Tipe Rumah':'G1','Departemen / Afdeling':'Afd 1','Nama Penghuni':'San Haji','NIK Penghuni':'PSAM-0001','Jumlah Penghuni':1,'Atap':'Baik','Listrik':'Baik','Air':'Baik','Septictank':'Baik','Cat':'Baik','Drainase':'Baik'},
+  {_row:3,'Kode Rumah':'G5-A1','Tipe Rumah':'G5','Departemen / Afdeling':'Afd 1','Nama Penghuni':'Rina Wulandari','NIK Penghuni':'PSAM-0002','Jumlah Penghuni':3,'Atap':'Rusak','Listrik':'Baik','Air':'Baik','Septictank':'Baik','Cat':'Rusak','Drainase':'Baik'},
+  {_row:4,'Kode Rumah':'G5-A2','Tipe Rumah':'G5','Departemen / Afdeling':'Afd 1','Nama Penghuni':'Budi Santoso','NIK Penghuni':'PSAM-0003','Jumlah Penghuni':2,'Atap':'Baik','Listrik':'Baik','Air':'Baik','Septictank':'Baik','Cat':'Baik','Drainase':'Baik'},
+  {_row:5,'Kode Rumah':'G10-B1','Tipe Rumah':'G10','Departemen / Afdeling':'Kebun','Nama Penghuni':'Siti Aminah','NIK Penghuni':'PSAM-0004','Jumlah Penghuni':4,'Atap':'Baik','Listrik':'Rusak','Air':'Baik','Septictank':'Baik','Cat':'Baik','Drainase':'Baik'}
+];
+const DEMO_PERUMAHAN_AKTIVITAS = [
+  {_row:2,'Tanggal':'2026-06-15','Kode Rumah':'G5-A1','Departemen / Afdeling':'Afd 1','Item':'Atap','Jenis Aktivitas':'Inspeksi','Kondisi':'Rusak','PIC':'Mandor PGA','Keterangan':'Bocor saat hujan','Status':'Diproses','Tanggal Selesai':''},
+  {_row:3,'Tanggal':'2026-05-02','Kode Rumah':'G10-B1','Departemen / Afdeling':'Kebun','Item':'Listrik','Jenis Aktivitas':'Perbaikan','Kondisi':'Rusak','PIC':'Staff PGA','Keterangan':'Ganti instalasi','Status':'Selesai','Tanggal Selesai':'2026-05-05'}
 ];
 
 // ══════════════════════════════════════════════════
@@ -590,7 +691,7 @@ async function syncAllDataNow(btn){
   if(!USE_BACKEND){ toast('Backend URL belum diatur.', true); return; }
   if(btn){ btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Menyinkronkan...'; }
   invalidateCache();
-  const getters = [getSuratData,getSPHData,getSuratDinasData,getAssetData,getKaryawanData,getAbsensiData,getCutiData,getMPPData,getMPPGridData,getFurnitureData,getBangunanData,getUnitData,getUsersData,getDimensionsData,getSettingsData];
+  const getters = [getSuratData,getSPHData,getSuratDinasData,getAssetData,getKaryawanData,getAbsensiData,getCutiData,getMPPData,getFurnitureData,getBangunanData,getUnitData,getAnakSekolahData,getAnakTPAData,getUsersData,getDimensionsData,getSettingsData];
   for(const fn of getters){ try{ await fn(); }catch(e){ console.warn(e); } }
   persistCacheToLocal();
   if(btn){ btn.disabled=false; btn.innerHTML='<i class="fas fa-cloud-arrow-down"></i> Sinkronkan Semua Data'; }
@@ -732,7 +833,8 @@ async function renderSyncPage(){
 // ══════════════════════════════════════════════════
 let CU = null, CP = 'dashboard', charts = [], modalSaveCb = null;
 let _cache = { surat:null, sph:null, sphAngsuran:null, suratDinas:null, asset:null, users:null, dimensions:null, settings:null,
-  karyawan:null, absensi:null, cuti:null, mpp:null, mop:null, furniture:null, bangunan:null, unit:null, mppgrid:null };
+  karyawan:null, absensi:null, cuti:null, mpp:null, mop:null, furniture:null, bangunan:null, unit:null,
+  perumahan:null, perumahanAktivitas:null, anakSekolah:null, anakTPA:null };
 function invalidateCache(...keys){
   if(keys.length===0) Object.keys(_cache).forEach(k=>_cache[k]=null);
   else keys.forEach(k=>_cache[k]=null);
@@ -766,7 +868,10 @@ async function getMopData(){ return getData('mop','getMOP',DEMO_MOP); }
 async function getFurnitureData(){ return getData('furniture','getFurniture',DEMO_FURNITURE); }
 async function getBangunanData(){ return getData('bangunan','getBangunan',DEMO_BANGUNAN); }
 async function getUnitData(){ return getData('unit','getUnit',DEMO_UNIT); }
-async function getMPPGridData(){ return getData('mppgrid','getMPPGrid',[]); }
+async function getPerumahanData(){ return getData('perumahan','getPerumahan',DEMO_PERUMAHAN); }
+async function getPerumahanAktivitasData(){ return getData('perumahanAktivitas','getPerumahanAktivitas',DEMO_PERUMAHAN_AKTIVITAS); }
+async function getAnakSekolahData(){ return getData('anakSekolah','getAnakSekolah',[]); }
+async function getAnakTPAData(){ return getData('anakTPA','getAnakTPA',[]); }
 async function getUsersData(){ return getData('users','getUsers',DEMO_USERS); }
 
 // ── Monitoring (server-computed jika ada backend, dihitung ulang di demo) ──
@@ -812,6 +917,80 @@ async function getMPPMonitoringData(){
   const rows = await getMPPData();
   const data = rows.map(r=>{ const keb=Number(r['Kebutuhan (Standar)']||0), ex=Number(r['Existing (Saat Ini)']||0), gap=keb-ex;
     return Object.assign({},r,{'Kekurangan / Kelebihan':gap, Warning: gap>0?('Kekurangan '+gap+' orang'):(gap<0?('Kelebihan '+Math.abs(gap)+' orang'):'Sesuai')}); });
+  return {ok:true, data};
+}
+// ── SPH: warning "Hutang Lama Belum Lunas" (umur >= 6 bulan sejak Tanggal SPH)
+// & "Sisa Hutang Terbesar" (top 5 berdasarkan Sisa Hutang) — dua kriteria
+// digabung jadi satu daftar (union), diurutkan Sisa Hutang terbesar dulu. ──
+async function getSPHWarningsData(){
+  const rows = await getSPHData();
+  const now = new Date();
+  const belumLunas = rows.filter(r=> Number(r['Sisa Hutang']||0) > 0);
+  const topBesar = [...belumLunas].sort((a,b)=> Number(b['Sisa Hutang']||0)-Number(a['Sisa Hutang']||0)).slice(0,5);
+  const topBesarNo = new Set(topBesar.map(r=>r['No SPH']));
+  const data = belumLunas.map(r=>{
+    const tgl = new Date(r['Tanggal']);
+    const umurBulan = isNaN(tgl) ? null : Math.floor(daysBetween(tgl, now)/30);
+    const lama = umurBulan!==null && umurBulan>=6;
+    const besar = topBesarNo.has(r['No SPH']);
+    if(!lama && !besar) return null;
+    let ket = [];
+    if(lama) ket.push('Sudah berjalan '+umurBulan+' bulan, belum lunas');
+    if(besar) ket.push('Termasuk 5 sisa hutang terbesar');
+    return {'No SPH':r['No SPH'],'Nama Karyawan':r['Nama Karyawan'],'Departemen':r['Departemen'],'Tanggal':r['Tanggal'],'Jumlah Hutang':Number(r['Jumlah Hutang']||0),'Sisa Hutang':Number(r['Sisa Hutang']||0),Keterangan:ket.join(' · ')};
+  }).filter(Boolean).sort((a,b)=> b['Sisa Hutang']-a['Sisa Hutang']);
+  return {ok:true, data};
+}
+// ── MOP: warning "Segera Lunas" — sekarang pakai Tenor (Bulan) & Potongan Ke
+// sebagai sumber utama (presisi per-bulan): sisa angsuran = Tenor - Potongan
+// Ke. Kalau Tenor belum diisi (data lama), fallback ke heuristik lama
+// berdasarkan kolom Tahun Lunas (granularitas tahun, bulan diasumsikan
+// Desember). ──
+async function getMOPWarningsData(){
+  const rows = await getMopData();
+  const now = new Date();
+  const curY = now.getFullYear(), curM = now.getMonth()+1;
+  const data = [];
+  rows.forEach(r=>{
+    const tenor = Number(r['Tenor (Bulan)']||0);
+    const potonganKe = Number(r['Potongan Ke']||0);
+    let sisaBulan = null, perkiraanLunas = '', ket = '';
+
+    if(tenor > 0){
+      sisaBulan = tenor - potonganKe;
+      const mulai = new Date(r['Mulai Angsuran']);
+      if(!isNaN(mulai)){
+        const d = new Date(mulai); d.setMonth(d.getMonth()+tenor);
+        perkiraanLunas = fmtDate(d.toISOString().slice(0,10));
+      }
+      if(sisaBulan <= 3){
+        ket = sisaBulan<=0
+          ? 'Tenor sudah terlampaui — kemungkinan sudah lunas, perlu dicek ulang'
+          : 'Segera lunas — sisa '+sisaBulan+' bulan lagi (dari total tenor '+tenor+' bulan)';
+      }
+    } else {
+      const raw = String(r['Tahun Lunas']||'').trim();
+      const m = raw.match(/\d{4}/);
+      if(m){
+        const lunasY = Number(m[0]);
+        const monthsLeft = (lunasY-curY)*12 + (12-curM);
+        if(monthsLeft <= 3){
+          sisaBulan = monthsLeft;
+          ket = monthsLeft<0 ? 'Sudah melewati Tahun Lunas — perlu dicek ulang' :
+                (monthsLeft===0 ? 'Lunas tahun ini (berdasarkan Tahun Lunas — isi Tenor untuk hasil lebih presisi)' :
+                'Segera lunas (± '+monthsLeft+' bulan lagi, berdasarkan Tahun Lunas — isi Tenor untuk hasil lebih presisi)');
+        }
+      }
+    }
+
+    if(ket){
+      data.push({NIK:r['NIK'],User:r['User'],Jabatan:r['Jabatan'],'Type Motor':r['Type Motor'],
+        'Potongan Ke':potonganKe||'-','Tenor (Bulan)':tenor||'-','Sisa Angsuran (Bulan)':sisaBulan!==null?sisaBulan:'-',
+        'Perkiraan Lunas':perkiraanLunas||'-',Keterangan:ket, _sort: sisaBulan!==null?sisaBulan:999});
+    }
+  });
+  data.sort((a,b)=> a._sort-b._sort);
+  data.forEach(d=> delete d._sort);
   return {ok:true, data};
 }
 async function getDimensionsData(){
@@ -890,13 +1069,23 @@ function downloadCSV(filename, rows){
 }
 function destroyCharts(){charts.forEach(c=>{try{c.destroy();}catch(e){}});charts=[];}
 
+function isLocalApiBackend(){
+  return /^https?:\/\/(127\.0\.0\.1|localhost)/i.test(BACKEND_URL);
+}
 function updateBannerMode(){
   const banner=document.getElementById('devBanner'), note=document.getElementById('loginNote'), foot=document.getElementById('loginFoot');
   if(USE_BACKEND){
-    banner.innerHTML='✅ Terhubung ke Google Sheets — '+BACKEND_URL.substring(0,60)+'...';
+    if(isLocalApiBackend()){
+      banner.innerHTML='✅ Terhubung ke Aplikasi Desktop (Local API) — '+BACKEND_URL.substring(0,60)+'...';
+      note.innerHTML='✅ Terhubung ke Local API Server (Desktop)';
+      foot.textContent='Login dengan akun di database lokal (SQLite) Anda.';
+    } else {
+      banner.innerHTML='✅ Terhubung ke Google Sheets — '+BACKEND_URL.substring(0,60)+'...';
+      note.innerHTML='✅ Backend URL sudah dikonfigurasi';
+      foot.textContent='Login dengan akun di Google Sheets Anda.';
+    }
     banner.style.background='var(--ok-soft)'; banner.style.color='#3f7a5c';
-    note.innerHTML='✅ Backend URL sudah dikonfigurasi'; note.style.background='var(--ok-soft)'; note.style.color='#3f7a5c';
-    foot.textContent='Login dengan akun di Google Sheets Anda.';
+    note.style.background='var(--ok-soft)'; note.style.color='#3f7a5c';
   } else {
     banner.innerHTML='⚠️ DEMO MODE — belum terhubung ke Google Sheets. Atur Backend URL di halaman login.';
     banner.style.background='var(--wa-soft)'; banner.style.color='#a8781f';
@@ -987,16 +1176,18 @@ async function goto(page){
   c.innerHTML='<div style="padding:60px;text-align:center;color:var(--tl)"><i class="fas fa-spinner fa-spin" style="font-size:1.4rem"></i></div>';
   await getDimensionsData(); await getSettingsData();
   if(page==='dashboard') await renderDashboard();
+  else if(page==='terpadu') await renderTerpaduPage();
   else if(page==='surat') await renderModulePage('surat');
-  else if(page==='sph') await renderModulePage('sph');
+  else if(page==='sph') await renderSPHPage();
   else if(page==='suratDinas') await renderModulePage('suratDinas');
   else if(page==='asset') await renderModulePage('asset');
   else if(page==='karyawan') await renderKaryawanPage();
   else if(page==='absensi') await renderAbsensiPage();
   else if(page==='cuti') await renderCutiPage();
   else if(page==='mpp') await renderMPPPage();
-  else if(page==='mppgrid') await renderModulePage('mppgrid');
-  else if(page==='mop') await renderModulePage('mop');
+  else if(page==='mop') await renderMOPPage();
+  else if(page==='perumahan') await renderPerumahanPage();
+  else if(page==='anak') await renderAnakPage();
   else if(page==='furniture') await renderModulePage('furniture');
   else if(page==='bangunan') await renderModulePage('bangunan');
   else if(page==='unit') await renderModulePage('unit');
@@ -1078,7 +1269,7 @@ const MODULES = {
       {key:'NIK', label:'NIK / NPK', type:'text'},
       {key:'Golongan', label:'Golongan', type:'text', ph:'mis. Staff'},
       {key:'Jabatan', label:'Jabatan', type:'text'},
-      {key:'Departemen / Afdeling', label:'Departemen / Afdeling', type:'select', options:()=>dimOptions('Departemen'), required:true},
+      {key:'Departemen / Afdeling', label:'Departemen / Afdeling', type:'select', options:()=>dimOptions('Lokasi / Afd'), required:true},
       {key:'Pengikut', label:'Pengikut', type:'text', full:true, ph:'Nama pengikut perjalanan dinas (jika ada)'},
       {key:'Tujuan', label:'Tujuan', type:'text', full:true, required:true},
       {key:'Keperluan', label:'Keperluan', type:'textarea', full:true},
@@ -1143,7 +1334,7 @@ const MODULES = {
       {key:'Tanggal Lahir', label:'Tanggal Lahir', type:'date'},
       {key:'Alamat', label:'Alamat', type:'text', full:true},
       {key:'Jabatan', label:'Jabatan', type:'text', required:true},
-      {key:'Departemen / Afdeling', label:'Departemen / Afdeling', type:'select', options:()=>dimOptions('Departemen')},
+      {key:'Departemen / Afdeling', label:'Departemen / Afdeling', type:'select', options:()=>dimOptions('Lokasi / Afd')},
       {key:'Status Karyawan', label:'Status Karyawan', type:'select', options:()=>dimOptions('Status Karyawan'), required:true},
       {key:'Golongan', label:'Golongan', type:'select', options:()=>dimOptions('Golongan')},
       {key:'Tanggal Masuk', label:'Tanggal Masuk', type:'date', required:true},
@@ -1225,7 +1416,7 @@ const MODULES = {
     label:'Monitoring MPP', icon:'fa-users-gear', apiName:'MPP', idField:null, idPrefix:'',
     getData:getMPPData, cacheKey:'mpp',
     fields:[
-      {key:'Departemen / Afdeling', label:'Departemen / Afdeling', type:'select', options:()=>dimOptions('Departemen'), required:true},
+      {key:'Departemen / Afdeling', label:'Departemen / Afdeling', type:'select', options:()=>dimOptions('Lokasi / Afd'), required:true},
       {key:'Jabatan', label:'Jabatan', type:'text', required:true},
       {key:'Kebutuhan (Standar)', label:'Kebutuhan (Standar)', type:'number', required:true},
       {key:'Existing (Saat Ini)', label:'Existing (Saat Ini)', type:'number', required:true},
@@ -1276,15 +1467,26 @@ MODULES.mop = {
     {key:'No. Mesin', label:'No. Mesin', type:'text'},
     {key:'Warna', label:'Warna', type:'text'},
     {key:'Potongan Ke', label:'Potongan Ke', type:'number', ph:'Angsuran ke berapa saat ini'},
+    {key:'Tenor (Bulan)', label:'Tenor / Jangka Waktu Angsuran (Bulan)', type:'number', ph:'mis. 36'},
+    {key:'Cicilan Per Bulan', label:'Cicilan Per Bulan (Rp)', type:'number'},
     {key:'Mulai Angsuran', label:'Mulai Angsuran', type:'date'},
-    {key:'Tahun Lunas', label:'Tahun Lunas', type:'number'},
+    {key:'Tahun Lunas', label:'Tahun Lunas', type:'number', ph:'Opsional — fallback kalau Tenor belum diisi'},
     {key:'Ket', label:'Keterangan', type:'textarea', full:true}
   ],
-  listColumns:['NIK','User','Jabatan','Type Motor','No. Plat','Potongan Ke','Mulai Angsuran','Tahun Lunas'],
+  listColumns:['NIK','User','Type Motor','Potongan Ke','Tenor (Bulan)','Sisa Angsuran','Cicilan Per Bulan','Tahun Lunas'],
   renderCell:(col,row)=>{
     if(col==='Mulai Angsuran') return fmtDate(row[col]);
+    if(col==='Cicilan Per Bulan') return row[col] ? fmtMoney(row[col]) : '-';
     if(col==='Tahun Lunas'){ const v=row[col]; if(!v) return '-'; const s=String(v).trim(); const m=s.match(/^\d{4}/); return esc(m?m[0]:s); }
     if(col==='Potongan Ke'){ const v=Number(row[col]||0); return v>0?badge(v,'by'):esc(v); }
+    if(col==='Tenor (Bulan)'){ const v=Number(row[col]||0); return v>0?esc(v+' bln'):'-'; }
+    if(col==='Sisa Angsuran'){
+      const tenor=Number(row['Tenor (Bulan)']||0);
+      if(!tenor) return '-';
+      const sisa=tenor-Number(row['Potongan Ke']||0);
+      if(sisa<=0) return badge('Lunas','bg');
+      return badge(sisa+' bln lagi', sisa<=3?'by':'bn');
+    }
     return esc(row[col]);
   },
   printTitle:()=> 'Kartu Monitoring MOP', printBody:(row,s)=>printMopBody(row,s)
@@ -1389,43 +1591,97 @@ MODULES.unit = {
   printTitle:()=> 'Kartu Asset Unit', printBody:(row,s)=>printUnitBody(row,s)
 };
 
-// ── MPP Rekap (Data Lama) — hasil import backup offline lama, format grid
-// kebutuhan per jabatan (beda dari "Monitoring MPP" / form FPTK yang dipakai
-// sekarang). Ditaruh terpisah supaya data lama tetap bisa dilihat/diedit
-// tanpa mencampur skema dengan MPP versi baru. ──
-MODULES.mppgrid = {
-  label:'MPP Rekap (Data Lama)', icon:'fa-table-list', apiName:'MPPGrid', idField:null, idPrefix:'',
-  getData:getMPPGridData, cacheKey:'mppgrid',
+// ── Perumahan Karyawan — didaftarkan di MODULES supaya field & mesin
+// simpan generik (renderFieldHtml + pola save openModuleForm) bisa dipakai
+// ulang oleh halaman Input Terpadu. Tampilan utama (denah/kartu/checklist)
+// TETAP pakai halaman custom renderPerumahanPage(), bukan renderModuleTable
+// — lihat goto('perumahan') di bawah. ──
+MODULES.perumahan = {
+  label:'Perumahan — Data Rumah', icon:'fa-house', apiName:'Perumahan', idField:'Kode Rumah', idPrefix:'',
+  getData:getPerumahanData, cacheKey:'perumahan',
   fields:[
-    {key:'DEPARTEMENT', label:'Departemen', type:'text', required:true},
-    {key:'KODE JABATAN', label:'Kode Jabatan', type:'text'},
-    {key:'NAMA JABATAN', label:'Nama Jabatan', type:'text', required:true, full:true},
-    {key:'GRADE', label:'Grade', type:'text'},
-    {key:'RASIO (HK/HA)', label:'Rasio (HK/HA)', type:'text'},
-    {key:'KEBUTUHAN 2026', label:'Kebutuhan 2026', type:'number'},
-    {key:'TERSEDIA      SD OKT 2025', label:'Tersedia s.d. Okt 2025', type:'number'},
-    {key:'OUTLOOK    NOP SD DES', label:'Outlook Nop s.d. Des', type:'number'},
-    {key:'KEKURANGAN 2025', label:'Kekurangan 2025', type:'number'},
-    {key:'KEBT STAFF', label:'Kebutuhan Staff', type:'number'},
-    {key:'KEBT SKUB', label:'Kebutuhan SKUB', type:'number'},
-    {key:'KEBT SKUH', label:'Kebutuhan SKUH', type:'number'},
-    {key:'KEBT PHL', label:'Kebutuhan PHL', type:'number'},
-    {key:'KEBT PWT', label:'Kebutuhan PWT', type:'number'},
-    {key:'TERSEDIA STAFF', label:'Tersedia Staff', type:'number'},
-    {key:'TERSEDIA SKUB', label:'Tersedia SKUB', type:'number'},
-    {key:'TERSEDIA SKUH', label:'Tersedia SKUH', type:'number'},
-    {key:'TERSEDIA PHL', label:'Tersedia PHL', type:'number'},
-    {key:'TERSEDIA PWT', label:'Tersedia PWT', type:'number'},
-    {key:'JAN', label:'Jan', type:'text'}, {key:'FEB', label:'Feb', type:'text'},
-    {key:'MAR', label:'Mar', type:'text'}, {key:'APR', label:'Apr', type:'text'},
-    {key:'MAY', label:'Mei', type:'text'}, {key:'JUN', label:'Jun', type:'text'},
-    {key:'JUL', label:'Jul', type:'text'}, {key:'AUG', label:'Agu', type:'text'},
-    {key:'SEP', label:'Sep', type:'text'}, {key:'OCT', label:'Okt', type:'text'},
-    {key:'NOV', label:'Nov', type:'text'}, {key:'DEC', label:'Des', type:'text'}
+    {key:'Kode Rumah', label:'Kode Rumah', type:'text', required:true, ph:'mis. G5-A1'},
+    {key:'Tipe Rumah', label:'Tipe Rumah (Denah)', type:'select', options:['G1','G5','G10']},
+    {key:'Departemen / Afdeling', label:'Departemen / Afdeling', type:'select', options:()=>dimOptions('Lokasi / Afd')},
+    {key:'Nama Penghuni', label:'Nama Penghuni', type:'text'},
+    {key:'NIK Penghuni', label:'NIK Penghuni', type:'text'},
+    {key:'Jumlah Penghuni', label:'Jumlah Penghuni', type:'number'},
+    {key:'Atap', label:'Atap', type:'select', options:['Baik','Rusak']},
+    {key:'Listrik', label:'Listrik', type:'select', options:['Baik','Rusak']},
+    {key:'Air', label:'Air', type:'select', options:['Baik','Rusak']},
+    {key:'Septictank', label:'Septictank', type:'select', options:['Baik','Rusak']},
+    {key:'Cat', label:'Cat', type:'select', options:['Baik','Rusak']},
+    {key:'Drainase', label:'Drainase', type:'select', options:['Baik','Rusak']}
   ],
-  listColumns:['DEPARTEMENT','KODE JABATAN','NAMA JABATAN','GRADE','KEBUTUHAN 2026','TERSEDIA STAFF','KEKURANGAN 2025'],
+  listColumns:['Kode Rumah','Tipe Rumah','Departemen / Afdeling','Nama Penghuni','Jumlah Penghuni'],
+  renderCell:(col,row)=> esc(row[col])
+};
+// ── Aktivitas Perumahan (Inspeksi & Perbaikan) — "addPerumahanAktivitas"
+// sudah ditangani khusus di backend (ActionRouter) supaya nyambung otomatis
+// ke checklist kondisi rumah di atas saat Perbaikan diset Selesai. ──
+MODULES.perumahanAktivitas = {
+  label:'Perumahan — Inspeksi / Perbaikan', icon:'fa-clipboard-check', apiName:'PerumahanAktivitas', idField:null, idPrefix:'',
+  getData:getPerumahanAktivitasData, cacheKey:'perumahanAktivitas',
+  fields:[
+    {key:'Tanggal', label:'Tanggal', type:'date', required:true},
+    {key:'Kode Rumah', label:'Kode Rumah', type:'text', required:true, ph:'mis. G5-A1'},
+    {key:'Departemen / Afdeling', label:'Departemen / Afdeling', type:'select', options:()=>dimOptions('Lokasi / Afd')},
+    {key:'Item', label:'Item Checklist', type:'select', options:['Atap','Listrik','Air','Septictank','Cat','Drainase']},
+    {key:'Jenis Aktivitas', label:'Jenis Aktivitas', type:'select', options:['Inspeksi','Perbaikan']},
+    {key:'Kondisi', label:'Kondisi Ditemukan', type:'select', options:['Baik','Rusak']},
+    {key:'PIC', label:'PIC / Petugas', type:'text'},
+    {key:'Status', label:'Status', type:'select', options:['Open','Diproses','Selesai']},
+    {key:'Keterangan', label:'Keterangan', type:'textarea', full:true}
+  ],
+  listColumns:['Tanggal','Kode Rumah','Item','Jenis Aktivitas','Status'],
+  renderCell:(col,row)=> esc(row[col])
+};
+
+// ── Data Anak Sekolah & Data TPA (Tempat Penitipan Anak) — digabung dalam
+// satu halaman renderAnakPage() dengan tab, tapi tetap 2 modul terpisah di
+// MODULES (skema kolom beda total) supaya CRUD generik (openModuleForm/
+// deleteModuleRow/exportModuleCSV/printModuleRow) tetap bisa dipakai apa
+// adanya. onDataChanged dipakai supaya setelah simpan/hapus, yang di-refresh
+// bukan renderModuleTable() (butuh #modTable, tidak ada di halaman ini)
+// melainkan renderAnakPage() supaya banner peringatan TPA ikut ter-update. ──
+MODULES.anakSekolah = {
+  label:'Data Anak Sekolah', icon:'fa-child-reaching', apiName:'AnakSekolah', idField:null, idPrefix:'',
+  getData:getAnakSekolahData, cacheKey:'anakSekolah', onDataChanged:()=>renderAnakPage(),
+  fields:[
+    {key:'Nama Anak', label:'Nama Anak', type:'text', required:true},
+    {key:'Nama Orang Tua', label:'Nama Orang Tua', type:'text', required:true},
+    {key:'Departemen / Afdeling', label:'Departemen / Afdeling', type:'select', options:()=>dimOptions('Lokasi / Afd')},
+    {key:'Nama Sekolah', label:'Nama Sekolah', type:'text', required:true},
+    {key:'Lokasi Sekolah', label:'Lokasi Sekolah', type:'text'},
+    {key:'Transportasi', label:'Transportasi', type:'select', options:['Antar Jemput Perusahaan','Kendaraan Pribadi','Angkutan Umum','Jalan Kaki','Lainnya']},
+    {key:'Keterangan', label:'Keterangan', type:'textarea', full:true}
+  ],
+  listColumns:['Nama Anak','Nama Orang Tua','Departemen / Afdeling','Nama Sekolah','Lokasi Sekolah','Transportasi'],
   renderCell:(col,row)=> esc(row[col]),
-  printTitle:()=> 'MPP Rekap (Data Lama)', printBody:(row,s)=>printMPPGridBody(row,s)
+  printTitle:()=> 'Data Anak Sekolah', printBody:(row,s)=>printAnakSekolahBody(row,s)
+};
+MODULES.anakTPA = {
+  label:'Data TPA (Tempat Penitipan Anak)', icon:'fa-baby', apiName:'AnakTPA', idField:null, idPrefix:'',
+  getData:getAnakTPAData, cacheKey:'anakTPA', onDataChanged:()=>renderAnakPage(),
+  fields:[
+    {key:'Nama Anak', label:'Nama Anak', type:'text', required:true},
+    {key:'Nama Orang Tua', label:'Nama Orang Tua', type:'text', required:true},
+    {key:'Departemen / Afdeling', label:'Lokasi (Afdeling)', type:'select', options:()=>dimOptions('Lokasi / Afd')},
+    {key:'Kondisi TPA', label:'Kondisi TPA', type:'select', options:['Baik','Perlu Perbaikan'], required:true},
+    {key:'Sarana Edukasi', label:'Sarana Edukasi', type:'select', options:['Ada','Tidak Ada']},
+    {key:'Sarana Mainan', label:'Sarana Mainan', type:'select', options:['Ada','Tidak Ada']},
+    {key:'Peralatan Kebersihan', label:'Peralatan Kebersihan', type:'select', options:['Ada','Tidak Ada']},
+    {key:'Peralatan Lainnya', label:'Peralatan Lainnya', type:'select', options:['Ada','Tidak Ada']},
+    {key:'Tanggal Distribusi Sarana', label:'Tanggal Distribusi Sarana', type:'date'},
+    {key:'Keterangan', label:'Keterangan', type:'textarea', full:true}
+  ],
+  listColumns:['Nama Anak','Nama Orang Tua','Departemen / Afdeling','Kondisi TPA','Sarana Edukasi','Sarana Mainan','Peralatan Kebersihan','Peralatan Lainnya','Tanggal Distribusi Sarana'],
+  renderCell:(col,row)=>{
+    if(col==='Kondisi TPA') return row[col]==='Perlu Perbaikan'?badge(row[col],'br'):badge(row[col]||'-','bg');
+    if(['Sarana Edukasi','Sarana Mainan','Peralatan Kebersihan','Peralatan Lainnya'].includes(col)) return row[col]==='Tidak Ada'?badge(row[col]||'Tidak Ada','br'):badge(row[col]||'Ada','bg');
+    return esc(row[col]);
+  },
+  printTitle:()=> 'Data TPA (Tempat Penitipan Anak)', printBody:(row,s)=>printAnakTPABody(row,s)
 };
 
 let _moduleFilter = { search:'', type:'Semua', page:1 };
@@ -1565,7 +1821,7 @@ function openModuleForm(key, row){
     invalidateCache(mod.cacheKey);
     toast(row?'Data berhasil diperbarui.':'Data berhasil ditambahkan.');
     closeModal();
-    renderModuleTable(key);
+    if(mod.onDataChanged) mod.onDataChanged(); else renderModuleTable(key);
   }, true);
 }
 
@@ -1582,7 +1838,7 @@ async function deleteModuleRow(key, rowNum){
   }
   invalidateCache(mod.cacheKey);
   toast('Data berhasil dihapus.');
-  renderModuleTable(key);
+  if(mod.onDataChanged) mod.onDataChanged(); else renderModuleTable(key);
 }
 
 function exportModuleCSV(key){
@@ -2164,16 +2420,6 @@ function printBangunanBody(row, s){
   </table>
   ${signBlockHtml(s, 'Penanggung Jawab', 'Diketahui, HR & PGA', s.DirectorName)}`;
 }
-function printMPPGridBody(row, s){
-  const rowsHtml = MODULES.mppgrid.fields.map(f=>
-    `<tr><td style="width:220px;padding:3px 0;">${esc(f.label)}</td><td>: ${esc(row[f.key]||'-')}</td></tr>`
-  ).join('');
-  return `
-  ${letterheadHtml(s)}
-  <h3 style="text-align:center;text-decoration:underline;margin-bottom:14px;">MPP REKAP (DATA LAMA)</h3>
-  <table style="width:100%;font-size:.82rem;">${rowsHtml}</table>
-  ${signBlockHtml(s, 'Dibuat Oleh', 'Diketahui, HR & PGA', s.DirectorName)}`;
-}
 function printUnitBody(row, s){
   return `
   ${letterheadHtml(s)}
@@ -2210,6 +2456,8 @@ function printMopBody(row, s){
     <tr><td style="padding:3px 0;">No. Mesin</td><td>: ${esc(row['No. Mesin']||'-')}</td></tr>
     <tr><td style="padding:3px 0;">Warna</td><td>: ${esc(row['Warna']||'-')}</td></tr>
     <tr><td style="padding:3px 0;">Potongan Ke</td><td>: ${esc(row['Potongan Ke']||'-')}</td></tr>
+    <tr><td style="padding:3px 0;">Tenor / Jangka Waktu Angsuran</td><td>: ${row['Tenor (Bulan)']?esc(row['Tenor (Bulan)'])+' bulan':'-'}</td></tr>
+    <tr><td style="padding:3px 0;">Cicilan Per Bulan</td><td>: ${row['Cicilan Per Bulan']?fmtMoney(row['Cicilan Per Bulan']):'-'}</td></tr>
     <tr><td style="padding:3px 0;">Mulai Angsuran</td><td>: ${fmtDate(row['Mulai Angsuran'])||'-'}</td></tr>
     <tr><td style="padding:3px 0;">Tahun Lunas</td><td>: ${(()=>{ const v=row['Tahun Lunas']; if(!v) return '-'; const m=String(v).trim().match(/^\d{4}/); return esc(m?m[0]:v); })()}</td></tr>
     <tr><td style="padding:3px 0;vertical-align:top;">Keterangan</td><td>: ${esc(row['Ket']||'-')}</td></tr>
@@ -2401,6 +2649,22 @@ async function renderKaryawanPage(){
   await renderModulePage('karyawan', banner);
   wireWarnPagination('karyawan', kw.data.length, renderKaryawanPage);
 }
+async function renderSPHPage(){
+  const sw = await getSPHWarningsData();
+  const banner = warningBannerHtml('sph', sw.data, ['No SPH','Nama Karyawan','Departemen','Tanggal','Jumlah Hutang','Sisa Hutang','Keterangan'],
+    'Tidak ada Sisa Hutang SPH yang sudah lama berjalan atau termasuk nominal terbesar saat ini.',
+    'SPH Perlu Perhatian (Hutang Lama Belum Lunas / Sisa Hutang Terbesar)');
+  await renderModulePage('sph', banner);
+  wireWarnPagination('sph', sw.data.length, renderSPHPage);
+}
+async function renderMOPPage(){
+  const mw = await getMOPWarningsData();
+  const banner = warningBannerHtml('mop', mw.data, ['NIK','User','Jabatan','Type Motor','Potongan Ke','Tenor (Bulan)','Sisa Angsuran (Bulan)','Perkiraan Lunas','Keterangan'],
+    'Tidak ada MOP yang akan segera lunas (dalam 3 bulan ke depan) saat ini.',
+    'MOP Akan Segera Lunas (≤ 3 bulan lagi)');
+  await renderModulePage('mop', banner);
+  wireWarnPagination('mop', mw.data.length, renderMOPPage);
+}
 let _absensiWarnRows = [];
 async function renderAbsensiPage(){
   const aw = await getAbsensiWarningsData();
@@ -2554,6 +2818,533 @@ async function renderMPPPage(){
     'Tidak ada kekurangan tenaga kerja saat ini.', 'Kekurangan Tenaga Kerja — Perlu Rencana Pemenuhan');
   await renderModulePage('mpp', banner);
   wireWarnPagination('mpp', kurang.length, renderMPPPage);
+}
+
+// ══════════════════════════════════════════════════
+//  PERUMAHAN KARYAWAN
+//  Denah per tipe rumah (G1/G5/G10), checklist kondisi, edit cepat
+//  penghuni, dan input terpadu Inspeksi/Perbaikan yang otomatis
+//  menyinkronkan checklist kondisi rumah + alert rumah perlu perbaikan
+//  — pola yang sama dengan halaman Perumahan di EMS Desktop.
+// ══════════════════════════════════════════════════
+const PERUMAHAN_TIPE_INFO = {
+  G1:  { label:'Tipe G1',  sub:'1 Kotak = 1 Nomor Rumah',  cls:'tipe-g1',  cap:1  },
+  G5:  { label:'Tipe G5',  sub:'1 Kotak = 5 Nomor Rumah',  cls:'tipe-g5',  cap:5  },
+  G10: { label:'Tipe G10', sub:'1 Kotak = 10 Nomor Rumah', cls:'tipe-g10', cap:10 }
+};
+const PERUMAHAN_TIPE_ORDER = ['G1','G5','G10'];
+const PERUMAHAN_CHECK_ITEMS = ['Atap','Listrik','Air','Septictank','Cat','Drainase'];
+let _perumahanAfd = '';
+let _perumahanData = [];
+let _perumahanAktData = [];
+
+function perumahanBlokLabel(i){
+  // 0=A,1=B,...25=Z,26=AA,27=AB,...
+  let n = i, s = '';
+  do{ s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26) - 1; } while(n >= 0);
+  return s;
+}
+function perumahanAfdFilterOptions(){
+  const base = dimOptions('Lokasi / Afd');
+  const dataAfd = new Set(_perumahanData.map(r=>r['Departemen / Afdeling']).filter(Boolean));
+  const extra = Array.from(dataAfd).filter(a=>!base.includes(a)).sort();
+  return [...base.filter(a=>dataAfd.has(a)), ...extra];
+}
+function perumahanFilteredData(){
+  return _perumahanAfd ? _perumahanData.filter(r=>(r['Departemen / Afdeling']||'')===_perumahanAfd) : _perumahanData;
+}
+function perumahanFilteredAktivitas(){
+  return _perumahanAfd ? _perumahanAktData.filter(a=>(a['Departemen / Afdeling']||'')===_perumahanAfd) : _perumahanAktData;
+}
+
+async function renderPerumahanPage(){
+  _perumahanData = await getPerumahanData();
+  _perumahanAktData = await getPerumahanAktivitasData();
+
+  const bad = _perumahanData.filter(r=>PERUMAHAN_CHECK_ITEMS.some(k=>String(r[k]||'').toUpperCase()==='RUSAK'));
+  const warnRows = bad.map(r=>{
+    const items = PERUMAHAN_CHECK_ITEMS.filter(k=>String(r[k]||'').toUpperCase()==='RUSAK');
+    return { 'Kode Rumah': r['Kode Rumah'], 'Penghuni': r['Nama Penghuni']||'-', 'Afdeling': r['Departemen / Afdeling']||'-', 'Item Rusak': items.join(', '), 'Jumlah Item Rusak': items.length };
+  });
+  const banner = warningBannerHtml('perumahan', warnRows, ['Kode Rumah','Penghuni','Afdeling','Item Rusak','Jumlah Item Rusak'],
+    'Semua rumah dinas dalam kondisi baik.', 'Rumah Dinas Perlu Perbaikan');
+
+  const c = document.getElementById('content');
+  c.innerHTML = `
+    <div class="ph"><div><h1>Perumahan Karyawan</h1><p>Denah per tipe rumah (G1 · G5 · G10), checklist kondisi, edit penghuni & log inspeksi/perbaikan rumah dinas — terpadu dengan checklist &amp; alert otomatis.</p></div>
+      <div class="btn-grp">
+        <button class="btn btn-ol" onclick="openPerumahanAktForm()"><i class="fas fa-clipboard-check"></i> Input Inspeksi / Perbaikan</button>
+        <button class="btn btn-pr" onclick="openPerumahanForm()"><i class="fas fa-plus"></i> Tambah Rumah</button>
+      </div>
+    </div>
+    ${banner}
+    <div class="tc">
+      <div class="prm-filter-bar">
+        <div class="fg2"><label>Filter Departemen / Afdeling</label>
+          <select id="prmAfdFilter"><option value="">Semua Afdeling</option>${perumahanAfdFilterOptions().map(a=>`<option value="${esc(a)}" ${a===_perumahanAfd?'selected':''}>${esc(a)}</option>`).join('')}</select>
+        </div>
+      </div>
+      <h3><i class="fas fa-map-location-dot"></i> Denah Perumahan per Tipe Rumah</h3>
+      <div class="prm-site-layout" id="prmMap"></div>
+      <div class="prm-legend">
+        <div class="prm-legend-row"><i class="fas fa-flag" style="color:var(--ok);"></i> Kondisi baik</div>
+        <div class="prm-legend-row"><i class="fas fa-flag" style="color:var(--er);"></i> Ada kerusakan</div>
+        <div class="prm-legend-row"><i class="fas fa-door-open" style="color:var(--tm);"></i> Slot kosong (belum ada data rumah)</div>
+        <div class="prm-legend-row"><i class="fas fa-building" style="color:var(--pr2);"></i> G5 &amp; G10 dikelompokkan otomatis per blok</div>
+      </div>
+    </div>
+    <div id="prmCards"></div>
+    <div class="tc">
+      <h3><i class="fas fa-clock-rotate-left"></i> Riwayat Inspeksi &amp; Perbaikan Rumah <span style="font-weight:400;color:var(--tm);font-size:.78rem;" id="prmAktCount"></span></h3>
+      <div class="tw"><table><thead><tr><th>Tanggal</th><th>Kode Rumah</th><th>Afdeling</th><th>Item</th><th>Jenis</th><th>Kondisi</th><th>PIC</th><th>Status</th><th>Selesai</th><th>Aksi</th></tr></thead>
+        <tbody id="prmAktBody"></tbody></table></div>
+    </div>`;
+
+  document.getElementById('prmAfdFilter').addEventListener('change', e=>{
+    _perumahanAfd = e.target.value;
+    renderPerumahanDenah(); renderPerumahanCards(); renderPerumahanRiwayat();
+  });
+  wireWarnPagination('perumahan', warnRows.length, renderPerumahanPage);
+
+  renderPerumahanDenah();
+  renderPerumahanCards();
+  renderPerumahanRiwayat();
+}
+
+// ══════════════════════════════════════════════════
+//  DATA ANAK — 1 halaman, 2 tab: Anak Sekolah & TPA (Tempat Penitipan
+//  Anak). Tab & tabel pakai ID sendiri (anakTable/anakSearch/anakPgn) biar
+//  tidak bentrok sama #modTable dst. yang dipakai renderModulePage() untuk
+//  halaman modul biasa; CRUD (tambah/edit/hapus/export/cetak) tetap pakai
+//  fungsi generik openModuleForm/deleteModuleRow/exportModuleCSV/
+//  printModuleRow yang sama seperti modul lain (lihat onDataChanged di
+//  MODULES.anakSekolah/anakTPA). Warning banner di atas khusus dari data
+//  TPA: kondisi "Perlu Perbaikan" atau ada sarana yang belum tersedia. ──
+const ANAK_SARANA_KEYS = ['Sarana Edukasi','Sarana Mainan','Peralatan Kebersihan','Peralatan Lainnya'];
+let _anakActiveTab = 'anakSekolah';
+let _anakFilter = { anakSekolah:{search:'',page:1}, anakTPA:{search:'',page:1} };
+
+async function renderAnakPage(){
+  const tpaData = await getAnakTPAData();
+  const warnRows = tpaData.filter(r=>
+    String(r['Kondisi TPA']||'').toUpperCase()==='PERLU PERBAIKAN' ||
+    ANAK_SARANA_KEYS.some(k=> String(r[k]||'').toUpperCase()!=='ADA')
+  ).map(r=>{
+    const missing = ANAK_SARANA_KEYS.filter(k=> String(r[k]||'').toUpperCase()!=='ADA');
+    return {
+      'Nama Anak': r['Nama Anak'],
+      'Orang Tua': r['Nama Orang Tua']||'-',
+      'Afdeling': r['Departemen / Afdeling']||'-',
+      'Kondisi TPA': r['Kondisi TPA']||'-',
+      'Sarana Belum Tersedia': missing.length? missing.join(', ') : '-'
+    };
+  });
+  const banner = warningBannerHtml('anakTpa', warnRows, ['Nama Anak','Orang Tua','Afdeling','Kondisi TPA','Sarana Belum Tersedia'],
+    'Semua data TPA dalam kondisi baik dan sarana lengkap.',
+    'TPA Perlu Perbaikan / Sarana Belum Lengkap');
+
+  const c = document.getElementById('content');
+  c.innerHTML = `
+    <div class="ph"><div><h1>Data Anak (Sekolah &amp; TPA)</h1><p>Data anak sekolah dan Tempat Penitipan Anak (TPA) karyawan — terpadu dalam satu halaman.</p></div></div>
+    ${banner}
+    <div class="tabs" id="anakTabs">
+      <button class="tab-btn ${_anakActiveTab==='anakSekolah'?'active':''}" data-t="anakSekolah"><i class="fas fa-child-reaching"></i> Data Anak Sekolah</button>
+      <button class="tab-btn ${_anakActiveTab==='anakTPA'?'active':''}" data-t="anakTPA"><i class="fas fa-baby"></i> Data TPA (Tempat Penitipan Anak)</button>
+    </div>
+    <div class="tc">
+      <div class="ta">
+        <input class="si" id="anakSearch" placeholder="Cari...">
+        <div class="btn-grp">
+          <button class="btn btn-ol btn-sm" id="anakExportBtn"><i class="fas fa-file-csv"></i> Export CSV</button>
+          <button class="btn btn-pr btn-sm" id="anakAddBtn"><i class="fas fa-plus"></i> Tambah Data</button>
+        </div>
+      </div>
+      <div class="tw"><table id="anakTable"><thead><tr id="anakThead"></tr></thead><tbody></tbody></table></div>
+      <div class="pgn" id="anakPgn"></div>
+    </div>`;
+
+  document.getElementById('anakTabs').addEventListener('click', e=>{
+    const b = e.target.closest('.tab-btn'); if(!b) return;
+    _anakActiveTab = b.dataset.t;
+    renderAnakPage();
+  });
+  wireWarnPagination('anakTpa', warnRows.length, renderAnakPage);
+  wireAnakTabBody();
+}
+
+function wireAnakTabBody(){
+  const key = _anakActiveTab;
+  const mod = MODULES[key];
+  document.getElementById('anakThead').innerHTML = mod.listColumns.map(cl=>`<th>${esc(cl)}</th>`).join('') + '<th>Aksi</th>';
+  document.getElementById('anakSearch').value = _anakFilter[key].search;
+  document.getElementById('anakSearch').addEventListener('input', debounce(e=>{
+    _anakFilter[key].search = e.target.value.toLowerCase(); _anakFilter[key].page = 1; renderAnakTable();
+  }, 250));
+  document.getElementById('anakExportBtn').onclick = ()=> exportModuleCSV(key);
+  document.getElementById('anakAddBtn').onclick = ()=> openModuleForm(key);
+  renderAnakTable();
+}
+
+async function renderAnakTable(){
+  const key = _anakActiveTab;
+  const mod = MODULES[key];
+  const f = _anakFilter[key];
+  const data = await mod.getData();
+  let rows = data.slice();
+  if(f.search){
+    const s = f.search;
+    rows = rows.filter(r=> mod.listColumns.some(c=> String(r[c]||'').toLowerCase().includes(s)));
+  }
+  rows = rows.slice().reverse();
+  const tbody = document.querySelector('#anakTable tbody');
+  if(!rows.length){ tbody.innerHTML = `<tr class="empty-row"><td colspan="${mod.listColumns.length+1}">Belum ada data.</td></tr>`; document.getElementById('anakPgn').innerHTML=''; return; }
+  const total = rows.length;
+  const totalPages = Math.max(1, Math.ceil(total/PAGE_SIZE));
+  if(f.page>totalPages) f.page = totalPages;
+  const start = (f.page-1)*PAGE_SIZE;
+  const pageRows = rows.slice(start, start+PAGE_SIZE);
+  tbody.innerHTML = pageRows.map(r=>`
+    <tr>${mod.listColumns.map(c=>`<td>${mod.renderCell(c,r)}</td>`).join('')}
+      <td>
+        <div class="btn-grp">
+          <button class="btn btn-ol btn-sm" onclick='openModuleForm("${key}", ${JSON.stringify(r).replace(/'/g,"&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
+          <button class="btn btn-ac btn-sm" onclick='printModuleRow("${key}", ${JSON.stringify(r).replace(/'/g,"&#39;")})' title="Cetak"><i class="fas fa-print"></i></button>
+          <button class="btn btn-dn btn-sm" onclick='deleteModuleRow("${key}", ${r._row})' title="Hapus"><i class="fas fa-trash"></i></button>
+        </div>
+      </td></tr>`).join('');
+  renderPaginationHtml('anakPgn', total, f.page, PAGE_SIZE, (p)=>{ f.page=p; renderAnakTable(); });
+}
+
+function printAnakSekolahBody(row, s){
+  const rowsHtml = MODULES.anakSekolah.fields.map(f=>
+    `<tr><td style="width:200px;padding:3px 0;">${esc(f.label)}</td><td>: ${esc(row[f.key]||'-')}</td></tr>`
+  ).join('');
+  return `
+  ${letterheadHtml(s)}
+  <h3 style="text-align:center;text-decoration:underline;margin-bottom:14px;">DATA ANAK SEKOLAH</h3>
+  <table style="width:100%;font-size:.88rem;">${rowsHtml}</table>
+  ${signBlockHtml(s, 'Dibuat Oleh', 'Diketahui, HR & PGA', s.DirectorName)}`;
+}
+function printAnakTPABody(row, s){
+  const rowsHtml = MODULES.anakTPA.fields.map(f=>
+    `<tr><td style="width:200px;padding:3px 0;">${esc(f.label)}</td><td>: ${esc(row[f.key]||'-')}</td></tr>`
+  ).join('');
+  return `
+  ${letterheadHtml(s)}
+  <h3 style="text-align:center;text-decoration:underline;margin-bottom:14px;">DATA TPA (TEMPAT PENITIPAN ANAK)</h3>
+  <table style="width:100%;font-size:.88rem;">${rowsHtml}</table>
+  ${signBlockHtml(s, 'Dibuat Oleh', 'Diketahui, HR & PGA', s.DirectorName)}`;
+}
+
+function renderPerumahanDenah(){
+  const mapEl = document.getElementById('prmMap');
+  if(!mapEl) return;
+  const filtered = perumahanFilteredData();
+
+  // Kelompokkan rumah per Tipe Rumah (denah G1/G5/G10). Data tanpa tipe yang
+  // dikenal masuk ke grup "Lainnya" supaya tidak ada data yang hilang dari peta.
+  const byTipe = {};
+  filtered.forEach(r=>{
+    const tipe = (r['Tipe Rumah']||'').toString().trim().toUpperCase() || 'LAINNYA';
+    (byTipe[tipe]=byTipe[tipe]||[]).push(r);
+  });
+  const tipeList = Array.from(new Set([...PERUMAHAN_TIPE_ORDER, ...Object.keys(byTipe)]));
+
+  const blocks = tipeList.map(tipe=>{
+    const rumahListRaw = byTipe[tipe];
+    if(!rumahListRaw || !rumahListRaw.length) return '';
+    const info = PERUMAHAN_TIPE_INFO[tipe] || { label: tipe, sub:'Tipe rumah lainnya', cls:'tipe-lainnya', cap:1 };
+    const cap = info.cap || 1;
+    const badCount = rumahListRaw.filter(r=>PERUMAHAN_CHECK_ITEMS.some(k=>String(r[k]||'').toUpperCase()==='RUSAK')).length;
+
+    // Urutkan supaya pengelompokan per kotak konsisten & mudah dibaca (mengikuti Kode Rumah).
+    const rumahList = [...rumahListRaw].sort((a,b)=>
+      String(a['Kode Rumah']||'').localeCompare(String(b['Kode Rumah']||''), undefined, {numeric:true, sensitivity:'base'}));
+
+    let cellsHtml;
+    if(cap<=1){
+      // ---- G1 (& tipe lain tak dikenal): 1 kotak = 1 nomor rumah ----
+      cellsHtml = rumahList.map(r=>{
+        const isBad = PERUMAHAN_CHECK_ITEMS.some(k=>String(r[k]||'').toUpperCase()==='RUSAK');
+        const tip = `${r['Kode Rumah']} · ${r['Nama Penghuni']||'-'} · ${r['Departemen / Afdeling']||'-'} · ${isBad?'Ada kerusakan':'Kondisi baik'}`;
+        return `<div class="prm-site-unit occupied ${isBad?'bad':''}" title="${esc(tip)}" onclick="focusPerumahanCard(${r._row})">
+          <i class="fas fa-house prm-site-icon"></i><span class="prm-site-code">${esc(r['Kode Rumah'])}</span>
+          <i class="fas fa-flag prm-site-flag"></i></div>`;
+      }).join('');
+    } else {
+      // ---- G5 / G10: kelompokkan berurutan menjadi kotak (bangunan) berkapasitas `cap` nomor rumah ----
+      const kotakGroups = [];
+      for(let i=0;i<rumahList.length;i+=cap){ kotakGroups.push(rumahList.slice(i, i+cap)); }
+
+      cellsHtml = kotakGroups.map((group, gi)=>{
+        const doorCells = [];
+        for(let d=0; d<cap; d++){
+          const r = group[d];
+          if(r){
+            const isBad = PERUMAHAN_CHECK_ITEMS.some(k=>String(r[k]||'').toUpperCase()==='RUSAK');
+            const tip = `${r['Kode Rumah']} · ${r['Nama Penghuni']||'-'} · ${r['Departemen / Afdeling']||'-'} · ${isBad?'Ada kerusakan':'Kondisi baik'}`;
+            doorCells.push(`<div class="prm-door occupied ${isBad?'bad':''}" title="${esc(tip)}" onclick="focusPerumahanCard(${r._row})">
+              <i class="fas fa-door-closed prm-site-icon"></i><span class="prm-site-code">${esc(r['Kode Rumah'])}</span>
+              <i class="fas fa-flag prm-site-flag"></i></div>`);
+          } else {
+            doorCells.push(`<div class="prm-door empty" title="Slot kosong / belum terdaftar"><i class="fas fa-door-open prm-site-icon"></i><span class="prm-site-code">-</span></div>`);
+          }
+        }
+        return `<div class="prm-kotak">
+          <div class="prm-kotak-label"><i class="fas fa-building"></i> Blok ${perumahanBlokLabel(gi)}</div>
+          <div class="prm-kotak-doors doors-${cap}">${doorCells.join('')}</div>
+        </div>`;
+      }).join('');
+    }
+
+    return `<div class="prm-site-block">
+      <div class="prm-site-block-head">
+        <span class="prm-site-block-title">${esc(info.label)} <span class="sub">· ${esc(info.sub)}</span></span>
+        <span class="prm-site-block-count">${rumahList.length} unit${badCount?` · ${badCount} rusak`:''}</span>
+      </div>
+      <div class="prm-site-block-grid ${info.cls}">${cellsHtml}</div>
+    </div>`;
+  }).join('');
+
+  mapEl.innerHTML = blocks || `<div style="text-align:center;color:var(--tl);padding:30px;">Belum ada data rumah untuk filter ini</div>`;
+}
+
+// Klik ikon rumah di peta -> scroll & sorot kartu checklist yang sesuai di bawah.
+function focusPerumahanCard(row){
+  const card = document.getElementById('prmCard-'+row);
+  if(!card) return;
+  card.scrollIntoView({ behavior:'smooth', block:'center' });
+  card.style.transition = 'box-shadow .2s ease, outline .2s ease';
+  card.style.outline = '2px solid var(--wa)';
+  card.style.outlineOffset = '3px';
+  setTimeout(()=>{ card.style.outline = ''; }, 1800);
+}
+
+function renderPerumahanCards(){
+  const wrap = document.getElementById('prmCards');
+  if(!wrap) return;
+  const filtered = perumahanFilteredData();
+  wrap.innerHTML = filtered.map(r=>`
+    <div class="prm-house-card" id="prmCard-${r._row}">
+      <div class="prm-house-card-head">
+        <div><h4>${esc(r['Kode Rumah'])} <span class="sub">${esc(r['Tipe Rumah']||'-')}</span></h4>
+          <span class="sub">${esc(r['Departemen / Afdeling']||'-')}</span></div>
+        <div class="btn-grp">
+          <button class="btn btn-ol btn-sm" onclick='openEditPenghuni(${JSON.stringify(r).replace(/'/g,"&#39;")})' title="Edit Nama &amp; NIK Penghuni"><i class="fas fa-pen"></i> Edit Penghuni</button>
+          <button class="btn btn-ol btn-sm" onclick='openPerumahanForm(${JSON.stringify(r).replace(/'/g,"&#39;")})' title="Edit Data Rumah"><i class="fas fa-house-chimney"></i></button>
+          <button class="btn btn-dn btn-sm" onclick="deletePerumahanRow(${r._row})" title="Hapus"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+      <div class="prm-house-penghuni">
+        <div><i class="fas fa-user"></i> ${esc(r['Nama Penghuni']||'-')} (${esc(r['Jumlah Penghuni']||'0')} orang)</div>
+        <div><i class="fas fa-id-card"></i> NIK: ${esc(r['NIK Penghuni']||'-')}</div>
+      </div>
+      <div class="prm-check-grid">
+        ${PERUMAHAN_CHECK_ITEMS.map(k=>{
+          const isBad = String(r[k]||'').toUpperCase()==='RUSAK';
+          return `<div class="prm-check-item ${isBad?'bad':''}"><i class="fas ${isBad?'fa-circle-xmark':'fa-circle-check'}"></i>${k}</div>`;
+        }).join('')}
+      </div>
+    </div>`).join('') || `<div class="tc" style="text-align:center;color:var(--tl);">Belum ada data rumah untuk filter ini</div>`;
+}
+
+function kondisiPerumahanBadge(k){ return badge(k||'-', String(k).toUpperCase()==='RUSAK'?'br':'bg'); }
+
+function perumahanAktRowHtml(a){
+  const isDone = String(a['Status']||'').toUpperCase()==='SELESAI' || String(a['Status']||'').toUpperCase()==='DONE';
+  const doneBtn = isDone ? '' : `<button class="btn btn-ol btn-sm" onclick="markPerumahanAktDone(${a._row})" title="Tandai Selesai"><i class="fas fa-check"></i></button>`;
+  return `<tr>
+      <td>${fmtDate(a['Tanggal'])}</td><td>${esc(a['Kode Rumah'])}</td><td>${esc(a['Departemen / Afdeling'])}</td>
+      <td>${esc(a['Item'])}</td><td>${esc(a['Jenis Aktivitas'])}</td>
+      <td>${kondisiPerumahanBadge(a['Kondisi'])}</td>
+      <td>${esc(a['PIC'])}</td><td>${statusBadge(a['Status']||'Open')}</td>
+      <td>${a['Tanggal Selesai']?fmtDate(a['Tanggal Selesai']):'-'}</td>
+      <td><div class="btn-grp">${doneBtn}<button class="btn btn-dn btn-sm" onclick="deletePerumahanAkt(${a._row})" title="Hapus"><i class="fas fa-trash"></i></button></div></td>
+    </tr>`;
+}
+
+function renderPerumahanRiwayat(){
+  const body = document.getElementById('prmAktBody');
+  if(!body) return;
+  const rows = perumahanFilteredAktivitas();
+  document.getElementById('prmAktCount').textContent = '· '+rows.length+' entri';
+  body.innerHTML = rows.slice().reverse().map(perumahanAktRowHtml).join('') || `<tr class="empty-row"><td colspan="10">Belum ada riwayat inspeksi / perbaikan.</td></tr>`;
+}
+
+// ---------- Tambah / Edit Rumah ----------
+function openPerumahanForm(row){
+  const afdOpts = dimOptions('Lokasi / Afd');
+  const val = (k, d)=> row ? (row[k]!==undefined && row[k]!==''?row[k]:d) : d;
+  const body = `<div class="fr">
+    <div class="fg2"><label>Kode Rumah *</label><input id="pf_kode" value="${esc(val('Kode Rumah',''))}" placeholder="mis. G5-A1 (Blok A, nomor 1 dari 5)" ${row?'disabled':''}></div>
+    <div class="fg2"><label>Tipe Rumah (Denah)</label><select id="pf_tipe">${['G1','G5','G10'].map(o=>`<option ${val('Tipe Rumah','G1')===o?'selected':''}>${o}</option>`).join('')}</select></div>
+    <div class="fg2"><label>Departemen / Afdeling</label><select id="pf_afd">${afdOpts.map(o=>`<option ${val('Departemen / Afdeling','')===o?'selected':''}>${esc(o)}</option>`).join('')}</select></div>
+    <div class="fg2"><label>Nama Penghuni</label><input id="pf_penghuni" value="${esc(val('Nama Penghuni',''))}" placeholder="Nama penghuni"></div>
+    <div class="fg2"><label>NIK Penghuni</label><input id="pf_nik" value="${esc(val('NIK Penghuni',''))}" placeholder="Boleh angka dan/atau huruf"></div>
+    <div class="fg2"><label>Jumlah Penghuni</label><input id="pf_jumlah" type="number" value="${esc(val('Jumlah Penghuni','0'))}"></div>
+    ${PERUMAHAN_CHECK_ITEMS.map(k=>`<div class="fg2"><label>${k}</label><select id="pf_${cssKey(k)}">${['Baik','Rusak'].map(o=>`<option ${val(k,'Baik')===o?'selected':''}>${o}</option>`).join('')}</select></div>`).join('')}
+  </div>`;
+  openModal(row?'Edit Rumah':'Tambah Rumah', body, async ()=>{
+    const kode = document.getElementById('pf_kode').value.trim();
+    if(!kode){ toast('Kode Rumah wajib diisi.', true); return; }
+    const data = {
+      'Kode Rumah': kode,
+      'Tipe Rumah': document.getElementById('pf_tipe').value,
+      'Departemen / Afdeling': document.getElementById('pf_afd').value,
+      'Nama Penghuni': document.getElementById('pf_penghuni').value.trim(),
+      'NIK Penghuni': document.getElementById('pf_nik').value.trim(),
+      'Jumlah Penghuni': document.getElementById('pf_jumlah').value || '0',
+    };
+    PERUMAHAN_CHECK_ITEMS.forEach(k=>{ data[k] = document.getElementById('pf_'+cssKey(k)).value; });
+    if(row) data._row = row._row;
+    if(USE_BACKEND){
+      const res = await api((row?'updatePerumahan':'addPerumahan'), data);
+      if(!res || !res.ok){ toast(res?res.error:'Gagal menyimpan data rumah.', true); return; }
+    } else {
+      const arr = await getPerumahanData();
+      if(row){ Object.assign(row, data); } else { data._row = arr.length+2; arr.push(data); }
+    }
+    invalidateCache('perumahan');
+    toast(row?'Data rumah berhasil diperbarui.':'Data rumah berhasil ditambahkan.');
+    closeModal();
+    renderPerumahanPage();
+  }, true);
+}
+
+async function deletePerumahanRow(rowNum){
+  if(!confirm('Yakin ingin menghapus data rumah ini? Riwayat inspeksi/perbaikan terkait TIDAK ikut terhapus.')) return;
+  if(USE_BACKEND){
+    const res = await api('deletePerumahan', {_row: rowNum});
+    if(!res || !res.ok){ toast(res?res.error:'Gagal menghapus data.', true); return; }
+  } else {
+    const arr = await getPerumahanData();
+    const idx = arr.findIndex(r=>r._row===rowNum);
+    if(idx>-1) arr.splice(idx,1);
+  }
+  invalidateCache('perumahan');
+  toast('Data rumah berhasil dihapus.');
+  renderPerumahanPage();
+}
+
+// ---------- Edit cepat: Nama & NIK & Jumlah Penghuni ----------
+function openEditPenghuni(row){
+  const body = `
+    <div style="margin-bottom:12px;color:var(--tm);font-size:.82rem;">Rumah ${esc(row['Kode Rumah'])} (${esc(row['Tipe Rumah']||'-')}) · ${esc(row['Departemen / Afdeling']||'-')}</div>
+    <div class="fg2"><label>Nama Penghuni</label><input id="pep_nama" value="${esc(row['Nama Penghuni']||'')}" placeholder="Nama penghuni"></div>
+    <div class="fg2"><label>NIK Penghuni (No. Induk Karyawan)</label><input id="pep_nik" value="${esc(row['NIK Penghuni']||'')}" placeholder="Boleh angka dan/atau huruf"></div>
+    <div class="fg2"><label>Jumlah Penghuni</label><input id="pep_jumlah" type="number" value="${esc(row['Jumlah Penghuni']||'0')}"></div>`;
+  openModal('Edit Penghuni Rumah', body, async ()=>{
+    const data = {
+      _row: row._row,
+      'Kode Rumah': row['Kode Rumah'],
+      'Nama Penghuni': document.getElementById('pep_nama').value.trim() || '-',
+      'NIK Penghuni': document.getElementById('pep_nik').value.trim() || '-',
+      'Jumlah Penghuni': document.getElementById('pep_jumlah').value || row['Jumlah Penghuni'] || '0',
+    };
+    if(USE_BACKEND){
+      const res = await api('updatePerumahan', data);
+      if(!res || !res.ok){ toast(res?res.error:'Gagal menyimpan data penghuni.', true); return; }
+    } else {
+      Object.assign(row, data);
+    }
+    invalidateCache('perumahan');
+    toast('Data penghuni berhasil diperbarui.');
+    closeModal();
+    renderPerumahanPage();
+  });
+}
+
+// ---------- Input Inspeksi / Perbaikan — terpadu dengan checklist kondisi ----------
+function openPerumahanAktForm(){
+  const rumahOpts = _perumahanData.map(r=>`<option value="${esc(r['Kode Rumah'])}" data-afd="${esc(r['Departemen / Afdeling']||'')}">${esc(r['Kode Rumah'])} (${esc(r['Tipe Rumah']||'-')} · ${esc(r['Departemen / Afdeling']||'-')})</option>`).join('') || `<option value="">Belum ada data rumah</option>`;
+  const today = new Date().toISOString().slice(0,10);
+  const body = `
+    <div style="background:var(--pr-soft);color:var(--pr2);border-radius:9px;padding:10px 12px;font-size:.78rem;margin-bottom:14px;display:flex;gap:8px;align-items:flex-start;">
+      <i class="fas fa-circle-info" style="margin-top:2px;"></i>
+      <span>Nyambung otomatis ke checklist kondisi &amp; Peta Lokasi Perumahan — kalau status Perbaikan diisi Selesai, item checklist rumah terkait otomatis jadi Baik.</span>
+    </div>
+    <div class="fr">
+      <div class="fg2"><label>Tanggal</label><input id="pakt_tanggal" type="date" value="${today}"></div>
+      <div class="fg2"><label>Kode Rumah *</label><select id="pakt_rumah" onchange="onPerumahanAktRumahChange()">${rumahOpts}</select></div>
+      <div class="fg2"><label>Departemen / Afdeling</label><input id="pakt_afd" readonly placeholder="Terisi otomatis dari data rumah"></div>
+      <div class="fg2"><label>Item Checklist</label><select id="pakt_item">${PERUMAHAN_CHECK_ITEMS.map(k=>`<option>${k}</option>`).join('')}</select></div>
+      <div class="fg2"><label>Jenis Aktivitas</label><select id="pakt_jenis"><option>Inspeksi</option><option>Perbaikan</option></select></div>
+      <div class="fg2"><label>Kondisi Ditemukan</label><select id="pakt_kondisi"><option>Baik</option><option>Rusak</option></select></div>
+      <div class="fg2"><label>PIC / Petugas</label><input id="pakt_pic" placeholder="Nama petugas"></div>
+      <div class="fg2"><label>Status</label><select id="pakt_status"><option>Open</option><option>Diproses</option><option>Selesai</option></select></div>
+      <div class="fg2 full"><label>Keterangan</label><input id="pakt_ket" placeholder="Opsional"></div>
+    </div>`;
+  openModal('Input Inspeksi / Perbaikan Rumah', body, async ()=>{
+    const rumah = document.getElementById('pakt_rumah').value;
+    if(!rumah){ toast('Kode Rumah wajib diisi.', true); return; }
+    const data = {
+      'Tanggal': document.getElementById('pakt_tanggal').value,
+      'Kode Rumah': rumah,
+      'Departemen / Afdeling': document.getElementById('pakt_afd').value,
+      'Item': document.getElementById('pakt_item').value,
+      'Jenis Aktivitas': document.getElementById('pakt_jenis').value,
+      'Kondisi': document.getElementById('pakt_kondisi').value,
+      'PIC': document.getElementById('pakt_pic').value.trim() || '-',
+      'Status': document.getElementById('pakt_status').value,
+      'Keterangan': document.getElementById('pakt_ket').value.trim() || '-',
+    };
+    if(USE_BACKEND){
+      const res = await api('addPerumahanAktivitas', data);
+      if(!res || !res.ok){ toast(res?res.error:'Gagal menyimpan aktivitas.', true); return; }
+    } else {
+      const arr = await getPerumahanAktivitasData();
+      data._row = arr.length+2;
+      arr.push(data);
+      if(String(data['Jenis Aktivitas']).toLowerCase()==='perbaikan' && String(data['Status']).toLowerCase()==='selesai' && PERUMAHAN_CHECK_ITEMS.includes(data['Item'])){
+        const rumahRow = _perumahanData.find(r=>r['Kode Rumah']===rumah);
+        if(rumahRow) rumahRow[data['Item']] = 'Baik';
+      }
+    }
+    invalidateCache('perumahan','perumahanAktivitas');
+    toast('Aktivitas perumahan tersimpan.');
+    closeModal();
+    renderPerumahanPage();
+  }, true);
+  onPerumahanAktRumahChange();
+}
+function onPerumahanAktRumahChange(){
+  const sel = document.getElementById('pakt_rumah');
+  const opt = sel && sel.selectedOptions[0];
+  document.getElementById('pakt_afd').value = opt ? (opt.dataset.afd||'') : '';
+}
+async function markPerumahanAktDone(rowNum){
+  if(USE_BACKEND){
+    const res = await api('updatePerumahanAktivitas', {_row: rowNum, 'Status':'Selesai'});
+    if(!res || !res.ok){ toast(res?res.error:'Gagal update status.', true); return; }
+  } else {
+    const arr = await getPerumahanAktivitasData();
+    const row = arr.find(a=>a._row===rowNum);
+    if(row){
+      row['Status']='Selesai';
+      if(!row['Tanggal Selesai']) row['Tanggal Selesai']=new Date().toISOString().slice(0,10);
+      if(String(row['Jenis Aktivitas']).toLowerCase()==='perbaikan' && PERUMAHAN_CHECK_ITEMS.includes(row['Item'])){
+        const rumahRow = _perumahanData.find(r=>r['Kode Rumah']===row['Kode Rumah']);
+        if(rumahRow) rumahRow[row['Item']] = 'Baik';
+      }
+    }
+  }
+  invalidateCache('perumahan','perumahanAktivitas');
+  toast('Ditandai selesai — checklist rumah ikut disinkronkan.');
+  renderPerumahanPage();
+}
+async function deletePerumahanAkt(rowNum){
+  if(!confirm('Yakin ingin menghapus riwayat aktivitas ini?')) return;
+  if(USE_BACKEND){
+    const res = await api('deletePerumahanAktivitas', {_row: rowNum});
+    if(!res || !res.ok){ toast(res?res.error:'Gagal menghapus.', true); return; }
+  } else {
+    const arr = await getPerumahanAktivitasData();
+    const idx = arr.findIndex(a=>a._row===rowNum);
+    if(idx>-1) arr.splice(idx,1);
+  }
+  invalidateCache('perumahanAktivitas');
+  toast('Riwayat aktivitas dihapus.');
+  renderPerumahanPage();
 }
 
 // ══════════════════════════════════════════════════
@@ -2751,6 +3542,184 @@ async function renderDashboard(){
 }
 
 // ══════════════════════════════════════════════════
+//  INPUT TERPADU — satu halaman untuk input SEMUA jenis data
+//  (Surat, SPH, Surat Dinas, Karyawan, Absensi, Cuti, MPP, Perumahan,
+//  Asset, dst). Field & mekanisme simpan dipakai ulang langsung dari
+//  MODULES[key].fields + pola generik ala openModuleForm() — supaya data
+//  tetap "nyambung" 1:1 ke sheet aslinya masing-masing (termasuk logic
+//  khusus di backend seperti sinkronisasi checklist Perumahan, ledger SPH,
+//  Sisa Cuti, dll — semua tetap jalan karena action-nya sama persis).
+//  Setelah simpan, form dikosongkan lagi & TETAP di halaman ini (tidak
+//  pindah halaman), lengkap dengan alert ringkas untuk jenis data yang
+//  sedang dipilih supaya tetap kelihatan tanpa buka halaman asalnya.
+// ══════════════════════════════════════════════════
+const TERPADU_GROUPS = [
+  { label:'Dokumen',      keys:['surat','suratDinas','sph'] },
+  { label:'Kepegawaian',  keys:['karyawan','absensi','cuti','mpp'] },
+  { label:'Perumahan',    keys:['perumahan','perumahanAktivitas'] },
+  { label:'Anak & TPA',   keys:['anakSekolah','anakTPA'] },
+  { label:'Asset',        keys:['asset','furniture','bangunan','unit','mop'] }
+];
+let _terpaduKey = 'surat';
+let _terpaduLog = [];
+
+function terpaduOriginPage(key){ return key==='perumahanAktivitas' ? 'perumahan' : (key==='anakSekolah'||key==='anakTPA') ? 'anak' : key; }
+
+/** Prefill tanggal hari ini utk field tanggal transaksi utama saja (bukan semua field date) — field lain sengaja dibiarkan kosong supaya user tetap sadar mengisi sendiri. */
+function terpaduDefaultRow(mod){
+  const today = new Date().toISOString().slice(0,10);
+  const row = {};
+  mod.fields.forEach(f=>{ if(f.type==='date' && (f.key==='Tanggal' || f.key==='Tanggal Pengajuan')) row[f.key]=today; });
+  return row;
+}
+
+function terpaduSummary(mod, data){
+  const parts = [];
+  if(mod.idField && data[mod.idField]) parts.push(data[mod.idField]);
+  const descField = mod.fields.find(f=>f.full) || mod.fields.find(f=>f.required && f.key!==mod.idField);
+  if(descField && data[descField.key]) parts.push(data[descField.key]);
+  return parts.join(' — ') || '-';
+}
+
+async function renderTerpaduPage(){
+  const c = document.getElementById('content');
+  c.innerHTML = `
+    <div class="ph"><div><h1>Input Terpadu</h1><p>Input cepat semua jenis data dari satu halaman — pilih jenis data, isi form, simpan. Data otomatis tersimpan ke sheet masing-masing tanpa perlu pindah-pindah halaman.</p></div></div>
+    <div class="tc">
+      <div class="prm-filter-bar">
+        <div class="fg2" style="min-width:300px;">
+          <label>Jenis Data / Input</label>
+          <select id="terpaduModul" onchange="onTerpaduModuleChange()">
+            ${TERPADU_GROUPS.map(g=>`<optgroup label="${esc(g.label)}">${g.keys.map(k=>`<option value="${k}" ${k===_terpaduKey?'selected':''}>${esc(MODULES[k].label)}</option>`).join('')}</optgroup>`).join('')}
+          </select>
+        </div>
+        <button class="btn btn-ol" onclick="gotoTerpaduOrigin()"><i class="fas fa-arrow-up-right-from-square"></i> Lihat Halaman Asal</button>
+      </div>
+      <div id="terpaduAlert"></div>
+      <div id="terpaduFields"></div>
+      <div class="btn-grp" style="margin-top:6px;">
+        <button class="btn btn-pr" onclick="saveTerpadu()"><i class="fas fa-floppy-disk"></i> Simpan &amp; Input Lagi</button>
+        <button class="btn btn-ol" onclick="renderTerpaduFields()"><i class="fas fa-rotate-left"></i> Bersihkan Form</button>
+      </div>
+    </div>
+    <div class="tc">
+      <h3><i class="fas fa-clock"></i> Baru Saja Diinput (Sesi Ini)</h3>
+      <div class="tw"><table><thead><tr><th>Waktu</th><th>Jenis Data</th><th>Ringkasan</th></tr></thead>
+        <tbody id="terpaduLogBody"></tbody></table></div>
+    </div>`;
+
+  renderTerpaduFields();
+  renderTerpaduLog();
+  await renderTerpaduAlert();
+}
+
+function renderTerpaduFields(){
+  const mod = MODULES[_terpaduKey];
+  const box = document.getElementById('terpaduFields');
+  if(!box) return;
+  box.innerHTML = `<div class="fr">${mod.fields.map(f=>renderFieldHtml(f, terpaduDefaultRow(mod))).join('')}</div>`;
+}
+
+async function onTerpaduModuleChange(){
+  _terpaduKey = document.getElementById('terpaduModul').value;
+  renderTerpaduFields();
+  await renderTerpaduAlert();
+}
+
+function gotoTerpaduOrigin(){ goto(terpaduOriginPage(_terpaduKey)); }
+
+/** Alert ringkas khusus utk jenis data yang sedang dipilih — versi ringkas dari warningBannerHtml() di masing-masing halaman asal, supaya tetap kelihatan tanpa pindah halaman. Modul tanpa alert khusus (Surat, SPH, Asset, dst) tidak menampilkan apa-apa. */
+async function terpaduAlertInfo(key){
+  if(key==='karyawan'){
+    const r = await getKaryawanWarningsData();
+    return r.data.length ? {level:'warn', text:`${r.data.length} karyawan PKWT perlu Penilaian/Perpanjangan Kontrak (masa kerja > 3 bulan).`}
+      : {level:'ok', text:'Tidak ada karyawan PKWT yang memerlukan penilaian/perpanjangan saat ini.'};
+  }
+  if(key==='absensi'){
+    const r = await getAbsensiWarningsData();
+    return r.data.length ? {level:'warn', text:`${r.data.length} karyawan terindikasi perlu diterbitkan Surat Peringatan (mangkir berlebih).`}
+      : {level:'ok', text:'Tidak ada indikasi mangkir berlebih saat ini.'};
+  }
+  if(key==='cuti'){
+    const r = await getCutiMonitoringData();
+    const warn = r.data.filter(x=>x.Warning);
+    return warn.length ? {level:'warn', text:`${warn.length} pengajuan cuti dengan sisa cuti habis/minus — perlu verifikasi.`}
+      : {level:'ok', text:'Semua sisa hak cuti karyawan masih aman.'};
+  }
+  if(key==='mpp'){
+    const r = await getMPPMonitoringData();
+    const kurang = r.data.filter(x=>Number(x['Kekurangan / Kelebihan'])>0);
+    return kurang.length ? {level:'warn', text:`${kurang.length} posisi kekurangan tenaga kerja — perlu rencana pemenuhan.`}
+      : {level:'ok', text:'Tidak ada kekurangan tenaga kerja saat ini.'};
+  }
+  if(key==='perumahan' || key==='perumahanAktivitas'){
+    const rows = await getPerumahanData();
+    const bad = rows.filter(r=>PERUMAHAN_CHECK_ITEMS.some(k=>String(r[k]||'').toUpperCase()==='RUSAK'));
+    return bad.length ? {level:'warn', text:`${bad.length} rumah dinas perlu perbaikan (checklist kondisi Rusak). Isi "Jenis Aktivitas: Perbaikan" + "Status: Selesai" utk auto-update checklist-nya.`}
+      : {level:'ok', text:'Semua rumah dinas dalam kondisi baik.'};
+  }
+  if(key==='anakSekolah' || key==='anakTPA'){
+    const rows = await getAnakTPAData();
+    const bad = rows.filter(r=> String(r['Kondisi TPA']||'').toUpperCase()==='PERLU PERBAIKAN' || ANAK_SARANA_KEYS.some(k=>String(r[k]||'').toUpperCase()!=='ADA'));
+    return bad.length ? {level:'warn', text:`${bad.length} TPA perlu perbaikan / sarana belum lengkap — cek halaman Data Anak tab TPA.`}
+      : {level:'ok', text:'Semua data TPA dalam kondisi baik dan sarana lengkap.'};
+  }
+  return null;
+}
+async function renderTerpaduAlert(){
+  const box = document.getElementById('terpaduAlert');
+  if(!box) return;
+  const info = await terpaduAlertInfo(_terpaduKey);
+  if(!info){ box.innerHTML=''; return; }
+  const warn = info.level==='warn';
+  box.innerHTML = `<div style="border-left:4px solid ${warn?'var(--er)':'var(--ok)'};background:${warn?'var(--er-soft)':'var(--ok-soft)'};border-radius:9px;padding:10px 14px;margin-bottom:16px;font-size:.82rem;color:var(--tx);display:flex;gap:8px;align-items:flex-start;">
+    <i class="fas ${warn?'fa-triangle-exclamation':'fa-circle-check'}" style="color:${warn?'var(--er)':'var(--ok)'};margin-top:2px;"></i><span>${esc(info.text)}</span></div>`;
+}
+
+function terpaduPushLog(mod, data){
+  _terpaduLog.unshift({ time:new Date(), label:mod.label, summary:terpaduSummary(mod,data) });
+  if(_terpaduLog.length>25) _terpaduLog.length = 25;
+  renderTerpaduLog();
+}
+function renderTerpaduLog(){
+  const body = document.getElementById('terpaduLogBody');
+  if(!body) return;
+  body.innerHTML = _terpaduLog.length
+    ? _terpaduLog.map(e=>`<tr><td>${e.time.toLocaleTimeString('id-ID')}</td><td>${esc(e.label)}</td><td>${esc(e.summary)}</td></tr>`).join('')
+    : `<tr class="empty-row"><td colspan="3">Belum ada input pada sesi ini.</td></tr>`;
+}
+
+async function saveTerpadu(){
+  const mod = MODULES[_terpaduKey];
+  const data = {};
+  let missing = null;
+  mod.fields.forEach(f=>{
+    const el = document.getElementById('f_'+cssKey(f.key));
+    const v = el ? el.value : '';
+    if(f.required && !v){ missing = f.label; }
+    data[f.key] = v;
+  });
+  if(missing){ toast('Field "'+missing+'" wajib diisi.', true); return; }
+
+  const action = 'add' + mod.apiName;
+  if(USE_BACKEND){
+    const res = await api(action, data);
+    if(!res || !res.ok){ toast(res?res.error:'Gagal menyimpan data.', true); return; }
+    if(res.id) data[mod.idField] = data[mod.idField] || res.id;
+  } else {
+    const arr = await mod.getData();
+    data._row = arr.length+2;
+    if(mod.idField && !data[mod.idField]) data[mod.idField]=mod.idPrefix+Math.random().toString(16).substring(2,10).toUpperCase();
+    arr.push(data);
+  }
+  invalidateCache(mod.cacheKey);
+  toast(mod.label+' berhasil disimpan.');
+  terpaduPushLog(mod, data);
+  renderTerpaduFields();
+  await renderTerpaduAlert();
+}
+
+// ══════════════════════════════════════════════════
 //  REPORTS PAGE
 // ══════════════════════════════════════════════════
 async function renderReportsPage(){
@@ -2772,7 +3741,12 @@ async function renderReportsPage(){
           <option value="furniture">Asset Furniture</option>
           <option value="bangunan">Asset Bangunan</option>
           <option value="unit">Asset Unit</option>
+          <option value="perumahan">Perumahan — Data Rumah</option>
+          <option value="perumahanAktivitas">Perumahan — Inspeksi / Perbaikan</option>
+          <option value="anakSekolah">Data Anak Sekolah</option>
+          <option value="anakTPA">Data TPA (Tempat Penitipan Anak)</option>
         </select>
+
         <input type="date" class="sel-sm" id="rptFrom">
         <span style="color:var(--tm);font-size:.8rem;">s/d</span>
         <input type="date" class="sel-sm" id="rptTo">
@@ -2803,7 +3777,10 @@ const REPORT_WARNING_LABELS = {
   asset:    'Hanya Asset yang Rusak / Perlu Perbaikan',
   furniture:'Hanya Furniture yang Rusak / Dalam Perbaikan',
   bangunan: 'Hanya Bangunan dengan catatan Rusak / Perlu Perbaikan',
-  unit:     'Hanya Unit dengan Kondisi Rusak'
+  unit:     'Hanya Unit dengan Kondisi Rusak',
+  perumahan: 'Hanya Rumah dengan minimal 1 item checklist Rusak (Atap/Listrik/Air/Septictank/Cat/Drainase)',
+  perumahanAktivitas: 'Hanya Inspeksi/Perbaikan yang belum Selesai (Open/Diproses)',
+  anakTPA: 'Hanya TPA dengan kondisi Perlu Perbaikan / sarana belum lengkap'
 };
 const REPORT_WARNING_FILTERS = {
   sph: async (rows) => rows.filter(r => Number(r['Sisa Hutang']||0) > 0),
@@ -2828,7 +3805,12 @@ const REPORT_WARNING_FILTERS = {
   asset:     async (rows) => rows.filter(r => /rusak/i.test(String(r['Kondisi']||'')) || r['Status']==='Diperbaiki'),
   furniture: async (rows) => rows.filter(r => r['Rusak'] || r['Perbaikan']),
   bangunan:  async (rows) => rows.filter(r => /rusak|perbaikan/i.test(String(r['KETERANGAN']||''))),
-  unit:      async (rows) => rows.filter(r => /rusak/i.test(String(r['KONDISI_UNIT']||'')))
+  unit:      async (rows) => rows.filter(r => /rusak/i.test(String(r['KONDISI_UNIT']||''))),
+  // ── Perumahan: rumah dengan minimal 1 item checklist kondisi berstatus Rusak,
+  // & aktivitas inspeksi/perbaikan yang belum ditandai Selesai. ──
+  perumahan: async (rows) => rows.filter(r => ['Atap','Listrik','Air','Septictank','Cat','Drainase'].some(k=> String(r[k]||'').toUpperCase()==='RUSAK')),
+  perumahanAktivitas: async (rows) => rows.filter(r => String(r['Status']||'')!=='Selesai'),
+  anakTPA: async (rows) => rows.filter(r => String(r['Kondisi TPA']||'').toUpperCase()==='PERLU PERBAIKAN' || ANAK_SARANA_KEYS.some(k=>String(r[k]||'').toUpperCase()!=='ADA'))
 };
 function updateReportWarningToggle(){
   const key = document.getElementById('rptModule').value;
@@ -2846,8 +3828,9 @@ function updateReportWarningToggle(){
 const DATE_FIELD_MAP = {
   surat:'Tanggal', sph:'Tanggal', suratDinas:'Tanggal', asset:'Tgl Update',
   karyawan:'Tanggal Masuk', cuti:'Tanggal Pengajuan', mpp:'Tgl Update', mop:'Mulai Angsuran',
-  furniture:'Tgl Input', bangunan:'Tgl Input', unit:'Tgl Input'
-  // absensi: sengaja tidak ada (data rekap per-periode, bukan per-tanggal harian)
+  furniture:'Tgl Input', bangunan:'Tgl Input', unit:'Tgl Input',
+  perumahanAktivitas:'Tanggal', anakTPA:'Tanggal Distribusi Sarana'
+  // absensi, perumahan (data rumah) & anakSekolah: sengaja tidak ada (bukan data per-tanggal harian)
 };
 let _lastReport = null;
 let _rptPage = 1;
@@ -2887,7 +3870,7 @@ async function runReport(){
   renderReportTablePage(mod, data);
 
   let rusakCount = null;
-  if(['asset','furniture','bangunan','unit'].includes(key) && REPORT_WARNING_FILTERS[key]){
+  if(['asset','furniture','bangunan','unit','perumahan','perumahanAktivitas','anakTPA'].includes(key) && REPORT_WARNING_FILTERS[key]){
     rusakCount = (await REPORT_WARNING_FILTERS[key](await mod.getData())).length;
   }
   const summary = document.getElementById('rptSummary');
@@ -2895,7 +3878,7 @@ async function runReport(){
     <div class="kpi"><h3>Total Data</h3><h2>${data.length}</h2></div>
     ${key==='sph'?`<div class="kpi"><h3>Total Hutang</h3><h2>${fmtMoney(data.reduce((s,r)=>s+Number(r['Jumlah Hutang']||0),0))}</h2></div><div class="kpi"><h3>Total Sisa Hutang</h3><h2>${fmtMoney(data.reduce((s,r)=>s+Number(r['Sisa Hutang']||0),0))}</h2></div>`:''}
     ${key==='asset'?`<div class="kpi"><h3>Total Nilai Perolehan</h3><h2>${fmtMoney(data.reduce((s,r)=>s+Number(r['Nilai Perolehan']||0),0))}</h2></div>`:''}
-    ${rusakCount!==null?`<div class="kpi"><h3>Rusak / Perlu Perbaikan</h3><h2 style="color:var(--er,#c0392b)">${rusakCount}</h2></div>`:''}
+    ${rusakCount!==null?`<div class="kpi"><h3>${key==='perumahanAktivitas'?'Belum Selesai':'Rusak / Perlu Perbaikan'}</h3><h2 style="color:var(--er,#c0392b)">${rusakCount}</h2></div>`:''}
   `;
 }
 function exportReportCSV(){
@@ -2928,6 +3911,7 @@ async function renderSettingsPage(){
       <button class="st-btn" data-t="tampilan">Tampilan</button>
       <button class="st-btn" data-t="master">Master Data</button>
       <button class="st-btn" data-t="users">Pengguna</button>
+      <button class="st-btn" data-t="excel">Sinkronisasi Excel</button>
       <button class="st-btn" data-t="backend">Koneksi Backend</button>
     </div>
     <div id="setContent"></div>`;
@@ -2944,6 +3928,7 @@ async function renderSettingsTab(){
   else if(_settingsTab==='tampilan') await renderSettingsTampilan(el);
   else if(_settingsTab==='master') await renderSettingsMaster(el);
   else if(_settingsTab==='users') await renderSettingsUsers(el);
+  else if(_settingsTab==='excel') await renderSettingsExcel(el);
   else await renderSettingsBackend(el);
 }
 async function renderTemaPage(){
@@ -3139,6 +4124,116 @@ async function deleteUserRow(rowNum){
   toast('User berhasil dihapus.');
   renderSettingsTab();
 }
+// ══════════════════════════════════════════════════
+//  SETTINGS > SINKRONISASI EXCEL (khusus HRPGA Desktop —
+//  memanggil action excelGetInfo/excelSetPath/excelSync/
+//  excelImport/importBackupJson di ActionRouter.cs lokal)
+// ══════════════════════════════════════════════════
+async function renderSettingsExcel(el){
+  el.innerHTML = `<div class="tc"><i class="fas fa-spinner fa-spin"></i> Memuat status sinkronisasi...</div>`;
+  const info = USE_BACKEND ? await api('excelGetInfo', {}) : null;
+
+  if(!info || !info.ok){
+    el.innerHTML = `
+      <div class="tc">
+        <div class="ta" style="align-items:flex-start;gap:14px;">
+          <div style="width:44px;height:44px;border-radius:10px;background:var(--pr-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-file-excel" style="color:var(--pr);font-size:1.2rem;"></i></div>
+          <div><h3 style="margin:0">Sinkronisasi Database Excel</h3><p style="color:var(--tm);font-size:.85rem;margin-top:2px;">Cadangkan data lokal ke file .xlsx, atau tarik data terbaru dari file master.</p></div>
+        </div>
+        <p style="color:var(--tm);font-size:.85rem;margin-top:14px;line-height:1.5;">
+          <i class="fas fa-circle-info"></i> Fitur ini hanya tersedia saat aplikasi terhubung ke Local API Server (aplikasi desktop HRPGA di port 58811). Pastikan Backend URL di tab <b>Koneksi Backend</b> mengarah ke <code>http://127.0.0.1:58811/exec</code>, lalu buka lagi tab ini.
+        </p>
+      </div>`;
+    return;
+  }
+
+  const path = info.excelPath || '';
+  const exists = !!info.excelExists;
+  const apiPort = info.apiPort || '-';
+  const dbPath = info.dbPath || '-';
+  const dbName = dbPath && dbPath!=='-' ? dbPath.split(/[\\/]/).pop() : '-';
+
+  el.innerHTML = `
+    <div class="tc">
+      <div class="ta" style="align-items:flex-start;gap:14px;">
+        <div style="width:44px;height:44px;border-radius:10px;background:var(--pr-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-file-excel" style="color:var(--pr);font-size:1.2rem;"></i></div>
+        <div style="flex:1;">
+          <h3 style="margin:0">Sinkronisasi Database Excel</h3>
+          <p style="color:var(--tm);font-size:.85rem;margin-top:2px;">Cadangkan data lokal ke file .xlsx, atau tarik data terbaru dari file master.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+        <span class="badge ${exists?'bg':'br'}"><i class="fas fa-circle" style="font-size:.5rem;"></i> Status: ${exists?'File ditemukan':'File tidak ditemukan'}</span>
+        <span class="badge bn">API lokal: 127.0.0.1:${esc(String(apiPort))}</span>
+        <span class="badge bn">DB SQLite: ${esc(dbName)}</span>
+      </div>
+      <div class="fg2" style="margin-top:18px;">
+        <label>Lokasi File Excel Master</label>
+        <input id="excelPathInput" value="${esc(path)}" placeholder="D:\\HRPGA_Local.xlsx">
+      </div>
+      <div class="btn-grp">
+        <button class="btn btn-ol" onclick="saveExcelPath()"><i class="fas fa-folder"></i> Simpan Lokasi</button>
+        <button class="btn btn-ac" onclick="syncToExcelMaster(this)"><i class="fas fa-arrow-up-from-bracket"></i> Sync ke Excel Master</button>
+        <button class="btn btn-pr" onclick="pullFromExcelMaster(this)"><i class="fas fa-arrow-down-to-bracket"></i> Tarik dari Excel Master</button>
+      </div>
+      <div class="btn-grp" style="margin-top:8px;">
+        <label class="btn btn-ol" style="cursor:pointer;margin:0;">
+          <i class="fas fa-file-import"></i> Import dari Backup JSON (Offline)
+          <input type="file" accept="application/json" style="display:none;" onchange="importOfflineJsonToLocalDb(this)">
+        </label>
+      </div>
+      <p style="color:var(--tm);font-size:.78rem;margin-top:14px;line-height:1.55;">
+        <i class="fas fa-circle-info"></i> "Sync ke Excel Master" menimpa file .xlsx dengan data SQLite lokal saat ini. "Tarik dari Excel Master" mengambil data dari file .xlsx dan menggabungkannya ke SQLite lokal (berguna setelah PC lain memperbarui file master di network share). "Import dari Backup JSON (Offline)" menggabungkan data dari file cache offline (hasil "Sinkronisasi Offline") ke SQLite lokal — dipakai kalau file Excel master tidak tersedia dan yang ada cuma backup offline ini. Setelah selesai, jalankan "Sync ke Excel Master" supaya hasilnya ikut tertulis ke file .xlsx.
+      </p>
+    </div>`;
+}
+async function saveExcelPath(){
+  const path = document.getElementById('excelPathInput').value.trim();
+  if(!path){ toast('Lokasi file belum diisi.', true); return; }
+  const res = await api('excelSetPath', {path});
+  if(!res || !res.ok){ toast(res?res.error:'Gagal menyimpan lokasi.', true); return; }
+  toast(res.message || 'Lokasi Excel Master disimpan.');
+  renderSettingsTab();
+}
+async function syncToExcelMaster(btn){
+  const orig = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sinkronisasi...';
+  const res = await api('excelSync', {});
+  btn.disabled = false; btn.innerHTML = orig;
+  if(!res || !res.ok){ toast(res?res.error:'Gagal sync ke Excel Master.', true); return; }
+  toast(res.message || 'Berhasil sync ke Excel Master.');
+  renderSettingsTab();
+}
+async function pullFromExcelMaster(btn){
+  if(!confirm('Tarik data dari file Excel Master? Data SQLite lokal akan digabungkan dengan isi file .xlsx.')) return;
+  const orig = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menarik data...';
+  const res = await api('excelImport', {});
+  btn.disabled = false; btn.innerHTML = orig;
+  if(!res || !res.ok){ toast(res?res.error:'Gagal menarik data dari Excel Master.', true); return; }
+  toast(res.message || 'Berhasil menarik data dari Excel Master.');
+  invalidateCache();
+  renderSettingsTab();
+}
+function importOfflineJsonToLocalDb(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e)=>{
+    let parsed;
+    try{ parsed = JSON.parse(e.target.result); }
+    catch(err){ toast('File JSON tidak valid: '+err.message, true); input.value=''; return; }
+    const includeUsers = confirm('Ikut sertakan data Users (akun login) dari backup ini?');
+    const res = await api('importBackupJson', {backup: parsed, includeUsers});
+    input.value='';
+    if(!res || !res.ok){ toast(res?res.error:'Gagal import backup JSON.', true); return; }
+    const detail = (res.details||[]).map(d=>`${d.sheet}: ${d.inserted} baris`).join(', ');
+    toast((res.message||'Import backup berhasil.') + (detail?' ('+detail+')':''));
+    invalidateCache();
+    renderSettingsTab();
+  };
+  reader.readAsText(file);
+}
 async function renderSettingsBackend(el){
   el.innerHTML = `
     <div class="tc" style="max-width:560px;">
@@ -3151,7 +4246,78 @@ async function renderSettingsBackend(el){
         <button class="btn btn-dn" onclick="clearBackendFromSettings()"><i class="fas fa-ban"></i> Mode Demo</button>
       </div>
       <div id="setBackendStatus" style="margin-top:14px;font-size:.86rem;"></div>
-    </div>`;
+    </div>
+    ${(USE_BACKEND && !isLocalApiBackend()) ? `
+    <div class="tc" style="max-width:560px;">
+      <h3>Export Semua Data ke Excel (.xlsx)</h3>
+      <p style="color:var(--tm);font-size:.85rem;margin-bottom:14px;line-height:1.5;">
+        Google Sheets Anda sudah otomatis jadi database utama — tidak perlu sinkron manual.
+        Tombol ini murni untuk kebutuhan backup/laporan: ambil semua data saat ini dan
+        download sebagai satu file .xlsx (satu sheet per modul), langsung dari browser.
+      </p>
+      <div class="btn-grp">
+        <button class="btn btn-pr" id="btnExportAllExcel" onclick="exportAllDataToExcel(this)"><i class="fas fa-file-export"></i> Download Semua Data (.xlsx)</button>
+      </div>
+      <p style="color:var(--tm);font-size:.78rem;margin-top:10px;">
+        <i class="fas fa-circle-info"></i> Ini hanya mengunduh salinan — tidak menulis apapun kembali ke Google Sheets. Untuk sync dua arah, edit datanya langsung di Google Sheets atau lewat aplikasi ini.
+      </p>
+    </div>` : ''}`;
+}
+/// <summary>Daftar modul yang diexport, sesuai nama sheet di ExcelSyncService.cs (desktop)
+/// supaya file .xlsx hasil export versi Google Sheets & versi desktop punya struktur sama.</summary>
+const EXCEL_EXPORT_MODULES = [
+  {label:'Surat',       getter: ()=>getSuratData()},
+  {label:'SPH',         getter: ()=>getSPHData()},
+  {label:'SuratDinas',  getter: ()=>getSuratDinasData()},
+  {label:'Asset',       getter: ()=>getAssetData()},
+  {label:'Karyawan',    getter: ()=>getKaryawanData()},
+  {label:'Absensi',     getter: ()=>getAbsensiData()},
+  {label:'Cuti',        getter: ()=>getCutiData()},
+  {label:'MPP',         getter: ()=>getMPPData()},
+  {label:'Furniture',   getter: ()=>getFurnitureData()},
+  {label:'Bangunan',    getter: ()=>getBangunanData()},
+  {label:'Unit',        getter: ()=>getUnitData()},
+  {label:'AnakSekolah', getter: ()=>getAnakSekolahData()},
+  {label:'AnakTPA',     getter: ()=>getAnakTPAData()},
+];
+async function exportAllDataToExcel(btn){
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  try{
+    const wb = XLSX.utils.book_new();
+
+    for(const mod of EXCEL_EXPORT_MODULES){
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengambil '+mod.label+'...';
+      let rows = [];
+      try{ rows = await mod.getter() || []; }catch(e){ console.warn('Gagal ambil', mod.label, e); }
+      const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{}]);
+      XLSX.utils.book_append_sheet(wb, ws, mod.label.substring(0,31));
+    }
+
+    // Dimensions & Settings bentuknya key-value (bukan array baris), jadi
+    // dipetakan jadi sheet 2 kolom (Key/Value) — sama seperti konvensi
+    // ImportKeyValueList() di BackupImportService.cs versi desktop.
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengambil Dimensions & Settings...';
+    try{
+      const dims = await getDimensionsData() || {};
+      const dimRows = [];
+      Object.entries(dims).forEach(([k,arr])=>(Array.isArray(arr)?arr:[arr]).forEach(v=>dimRows.push({['Column Name']:k, Value:v})));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dimRows.length?dimRows:[{}]), 'Dimensions');
+    }catch(e){ console.warn('Gagal ambil Dimensions', e); }
+    try{
+      const settings = await getSettingsData() || {};
+      const setRows = Object.entries(settings).filter(([k])=>k!=='_row').map(([k,v])=>({Key:k, Value:v}));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(setRows.length?setRows:[{}]), 'Settings');
+    }catch(e){ console.warn('Gagal ambil Settings', e); }
+
+    const filename = 'HRPGA_Export_'+new Date().toISOString().substring(0,10)+'.xlsx';
+    XLSX.writeFile(wb, filename);
+    toast('Export berhasil — file '+filename+' sedang diunduh.');
+  }catch(err){
+    toast('Gagal export ke Excel: '+err.message, true);
+  }finally{
+    btn.disabled = false; btn.innerHTML = orig;
+  }
 }
 async function testBackendFromSettings(){
   const url = document.getElementById('setBackendUrl').value.trim();
@@ -3220,6 +4386,124 @@ function openLoginBackendSettings(){
       setTimeout(()=>location.reload(), 700);
     });
   },50);
+}
+
+// ══════════════════════════════════════════════════
+//  BACKUP / SINKRON EXCEL DARI HALAMAN LOGIN — sengaja dibuat
+//  TERPISAH dari Settings > Sinkronisasi Excel (bukan berbagi state/DOM),
+//  supaya bisa dipakai staff yang belum sempat login / PC yang baru
+//  disetup. Selalu ke Local API Server, jadi tidak butuh SESSION_TOKEN.
+// ══════════════════════════════════════════════════
+async function openLoginExcelSync(){
+  const body = `<div id="loginExcelBody"><div class="tc" style="margin:0;"><i class="fas fa-spinner fa-spin"></i> Memuat status sinkronisasi...</div></div>`;
+  openModal('Backup / Sinkron Database Excel', body, null, true);
+  await renderLoginExcelBody();
+}
+async function renderLoginExcelBody(){
+  const el = document.getElementById('loginExcelBody');
+  if(!el) return;
+  const info = USE_BACKEND ? await api('excelGetInfo', {}) : null;
+
+  if(!info || !info.ok){
+    el.innerHTML = `
+      <div class="tc" style="margin:0;">
+        <div class="ta" style="align-items:flex-start;gap:14px;">
+          <div style="width:44px;height:44px;border-radius:10px;background:var(--pr-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-file-excel" style="color:var(--pr);font-size:1.2rem;"></i></div>
+          <div><h3 style="margin:0">Sinkronisasi Database Excel</h3><p style="color:var(--tm);font-size:.85rem;margin-top:2px;">Cadangkan data lokal ke file .xlsx, atau tarik data terbaru dari file master — bisa dipakai sebelum login.</p></div>
+        </div>
+        <p style="color:var(--tm);font-size:.85rem;margin-top:14px;line-height:1.5;">
+          <i class="fas fa-circle-info"></i> Fitur ini hanya tersedia saat aplikasi terhubung ke Local API Server (aplikasi desktop HRPGA di port 58811). Atur dulu <b>Pengaturan Backend</b> ke <code>http://127.0.0.1:58811/exec</code>, lalu buka lagi menu ini.
+        </p>
+      </div>`;
+    return;
+  }
+
+  const path = info.excelPath || '';
+  const exists = !!info.excelExists;
+  const apiPort = info.apiPort || '-';
+  const dbPath = info.dbPath || '-';
+  const dbName = dbPath && dbPath!=='-' ? dbPath.split(/[\\/]/).pop() : '-';
+
+  el.innerHTML = `
+    <div class="tc" style="margin:0;">
+      <div class="ta" style="align-items:flex-start;gap:14px;">
+        <div style="width:44px;height:44px;border-radius:10px;background:var(--pr-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas fa-file-excel" style="color:var(--pr);font-size:1.2rem;"></i></div>
+        <div style="flex:1;">
+          <h3 style="margin:0">Sinkronisasi Database Excel</h3>
+          <p style="color:var(--tm);font-size:.85rem;margin-top:2px;">Cadangkan data lokal ke file .xlsx, atau tarik data terbaru dari file master — tidak perlu login.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+        <span class="badge ${exists?'bg':'br'}"><i class="fas fa-circle" style="font-size:.5rem;"></i> Status: ${exists?'File ditemukan':'File tidak ditemukan'}</span>
+        <span class="badge bn">API lokal: 127.0.0.1:${esc(String(apiPort))}</span>
+        <span class="badge bn">DB SQLite: ${esc(dbName)}</span>
+      </div>
+      <div class="fg2" style="margin-top:18px;">
+        <label>Lokasi File Excel Master</label>
+        <input id="loginExcelPathInput" value="${esc(path)}" placeholder="D:\\HRPGA_Local.xlsx">
+      </div>
+      <div class="btn-grp">
+        <button class="btn btn-ol" onclick="loginSaveExcelPath()"><i class="fas fa-folder"></i> Simpan Lokasi</button>
+        <button class="btn btn-ac" onclick="loginSyncToExcelMaster(this)"><i class="fas fa-arrow-up-from-bracket"></i> Sync ke Excel Master</button>
+        <button class="btn btn-pr" onclick="loginPullFromExcelMaster(this)"><i class="fas fa-arrow-down-to-bracket"></i> Tarik dari Excel Master</button>
+      </div>
+      <div class="btn-grp" style="margin-top:8px;">
+        <label class="btn btn-ol" style="cursor:pointer;margin:0;">
+          <i class="fas fa-file-import"></i> Import dari Backup JSON (Offline)
+          <input type="file" accept="application/json" style="display:none;" onchange="loginImportOfflineJsonToLocalDb(this)">
+        </label>
+      </div>
+      <p style="color:var(--tm);font-size:.78rem;margin-top:14px;line-height:1.55;">
+        <i class="fas fa-circle-info"></i> Menu ini berdiri sendiri (terpisah dari Settings) supaya bisa dipakai staff yang belum sempat login atau PC yang baru disetup. "Sync ke Excel Master" menimpa file .xlsx dengan data SQLite lokal saat ini. "Tarik dari Excel Master" mengambil data dari file .xlsx dan menggabungkannya ke SQLite lokal.
+      </p>
+    </div>`;
+}
+async function loginSaveExcelPath(){
+  const path = document.getElementById('loginExcelPathInput').value.trim();
+  if(!path){ toast('Lokasi file belum diisi.', true); return; }
+  const res = await api('excelSetPath', {path});
+  if(!res || !res.ok){ toast(res?res.error:'Gagal menyimpan lokasi.', true); return; }
+  toast(res.message || 'Lokasi Excel Master disimpan.');
+  await renderLoginExcelBody();
+}
+async function loginSyncToExcelMaster(btn){
+  const orig = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sinkronisasi...';
+  const res = await api('excelSync', {});
+  btn.disabled = false; btn.innerHTML = orig;
+  if(!res || !res.ok){ toast(res?res.error:'Gagal sync ke Excel Master.', true); return; }
+  toast(res.message || 'Berhasil sync ke Excel Master.');
+  await renderLoginExcelBody();
+}
+async function loginPullFromExcelMaster(btn){
+  if(!confirm('Tarik data dari file Excel Master? Data SQLite lokal akan digabungkan dengan isi file .xlsx.')) return;
+  const orig = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menarik data...';
+  const res = await api('excelImport', {});
+  btn.disabled = false; btn.innerHTML = orig;
+  if(!res || !res.ok){ toast(res?res.error:'Gagal menarik data dari Excel Master.', true); return; }
+  toast(res.message || 'Berhasil menarik data dari Excel Master.');
+  invalidateCache();
+  await renderLoginExcelBody();
+}
+function loginImportOfflineJsonToLocalDb(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e)=>{
+    let parsed;
+    try{ parsed = JSON.parse(e.target.result); }
+    catch(err){ toast('File JSON tidak valid: '+err.message, true); input.value=''; return; }
+    const includeUsers = confirm('Ikut sertakan data Users (akun login) dari backup ini?');
+    const res = await api('importBackupJson', {backup: parsed, includeUsers});
+    input.value='';
+    if(!res || !res.ok){ toast(res?res.error:'Gagal import backup JSON.', true); return; }
+    const detail = (res.details||[]).map(d=>`${d.sheet}: ${d.inserted} baris`).join(', ');
+    toast((res.message||'Import backup berhasil.') + (detail?' ('+detail+')':''));
+    invalidateCache();
+    await renderLoginExcelBody();
+  };
+  reader.readAsText(file);
 }
 
 // ══════════════════════════════════════════════════
